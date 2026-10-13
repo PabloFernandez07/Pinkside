@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libro Mayor · Demo A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · macrostructure: Long Document · tone: austere-ledger · anchor hue: oxblood
+ * theme: custom (libro de cuentas) · pre-emit critique: P4 H4 E4 S4 R5 V5 */
+:root{
+  --color-paper:oklch(96% 0.018 85);
+  --color-paper-2:oklch(92% 0.022 82);
+  --color-ink:oklch(22% 0.02 60);
+  --color-ink-2:oklch(44% 0.02 65);
+  --color-rule:oklch(78% 0.03 75);
+  --color-accent:oklch(42% 0.14 25);
+  --font-display:"Newsreader",Georgia,serif;
+  --font-body:"Public Sans",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+  --space-xs:.25rem;--space-sm:.5rem;--space-md:1rem;--space-lg:1.5rem;--space-xl:2.5rem;--space-2xl:4rem;
+  --text-sm:.875rem;--text-md:1rem;--text-xl:1.5rem;--text-4xl:clamp(2.6rem,6vw,5.5rem);
+  --wrap:min(1600px,94vw);
+}
+:root[data-theme="dark"]{
+  --color-paper:oklch(20% 0.014 60);
+  --color-paper-2:oklch(25% 0.016 60);
+  --color-ink:oklch(93% 0.02 85);
+  --color-ink-2:oklch(72% 0.02 80);
+  --color-rule:oklch(38% 0.02 65);
+  --color-accent:oklch(72% 0.13 35);
+}
+*{box-sizing:border-box;margin:0}
+html,body{overflow-x:clip}
+body{background:var(--color-paper);color:var(--color-ink);font:var(--text-md)/1.55 var(--font-body)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--color-accent);outline-offset:3px}
+.wrap{width:var(--wrap);margin-inline:auto}
+
+header.mast{border-bottom:3px double var(--color-ink)}
+.mast .wrap{display:flex;align-items:center;gap:var(--space-xl);padding-block:var(--space-md)}
+.brand{font:600 var(--text-xl)/1 var(--font-display);letter-spacing:.01em;white-space:nowrap}
+.mast nav{display:flex;gap:var(--space-lg);overflow-x:auto;flex:1;scrollbar-width:none}
+.mast nav a{white-space:nowrap;text-decoration:none;color:var(--color-ink-2);padding:var(--space-xs) 0;border-bottom:2px solid transparent}
+.mast nav a:hover{color:var(--color-ink)}
+.mast nav a[aria-current]{color:var(--color-ink);border-color:var(--color-accent)}
+.tools{display:flex;gap:var(--space-md);align-items:center}
+button.tema{font:inherit;font-size:var(--text-sm);background:none;color:var(--color-ink);border:1px solid var(--color-rule);padding:.4rem .8rem;cursor:pointer;white-space:nowrap}
+button.tema:hover{border-color:var(--color-ink)}
+.av{width:2.2rem;height:2.2rem;display:grid;place-items:center;background:var(--color-ink);color:var(--color-paper);font:600 .9rem var(--font-display)}
+
+main{padding-block:var(--space-xl) var(--space-2xl)}
+.grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(0,4fr);gap:var(--space-2xl)}
+h1,h2{font-family:var(--font-display);font-weight:500;font-style:normal;letter-spacing:-.01em}
+h1{font-size:var(--text-xl);color:var(--color-ink-2);font-weight:500}
+h2{font-size:var(--text-xl);padding-bottom:var(--space-sm);border-bottom:1px solid var(--color-ink);margin-bottom:var(--space-md)}
+.saldo{font:500 var(--text-4xl)/1 var(--font-display);margin:var(--space-sm) 0 var(--space-md);font-variant-numeric:lining-nums tabular-nums;overflow-wrap:anywhere}
+.flujo{display:flex;gap:var(--space-xl);flex-wrap:wrap;padding-block:var(--space-md);border-block:1px solid var(--color-rule);margin-bottom:var(--space-xl);font-size:var(--text-sm);color:var(--color-ink-2)}
+.flujo b{display:block;font:500 var(--text-xl) var(--font-mono);color:var(--color-ink)}
+.flujo .sal b{color:var(--color-accent)}
+
+table{width:100%;border-collapse:collapse}
+th{font:600 .75rem var(--font-body);text-transform:uppercase;letter-spacing:.08em;text-align:left;color:var(--color-ink-2);padding:var(--space-sm) var(--space-sm) var(--space-sm) 0;border-bottom:2px solid var(--color-ink)}
+td{padding:.6rem .5rem .6rem 0;border-bottom:1px solid var(--color-rule);vertical-align:baseline}
+.num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th.num{font-family:var(--font-body)}
+tr.out td.num{color:var(--color-accent)}
+.mov td:first-child{font-family:var(--font-mono);font-size:var(--text-sm);color:var(--color-ink-2);white-space:nowrap}
+
+.side section+section{margin-top:var(--space-xl)}
+.perfil{display:grid;grid-template-columns:auto 1fr;gap:var(--space-md);align-items:start}
+.perfil .foto{width:5.5rem;aspect-ratio:3/4;background:var(--color-paper-2);border:1px solid var(--color-ink);display:grid;place-items:center;font:500 2rem var(--font-display)}
+.perfil dl{display:grid;grid-template-columns:auto 1fr;gap:.35rem var(--space-md);font-size:var(--text-sm)}
+.perfil dt{color:var(--color-ink-2)}.perfil dd{font-family:var(--font-mono);overflow-wrap:anywhere}
+.perfil dd.nombre{font:500 var(--text-xl) var(--font-display)}
+
+ul.stock{list-style:none;padding:0}
+.stock li{display:grid;grid-template-columns:1fr auto;gap:.15rem var(--space-md);padding:.55rem 0;border-bottom:1px solid var(--color-rule);align-items:baseline}
+.stock .q{font-family:var(--font-mono);text-align:right}.stock small{color:var(--color-ink-2)}
+.stock .bar{grid-column:1/-1;height:3px;background:var(--color-paper-2)}
+.stock .bar i{display:block;height:100%;background:var(--color-ink)}
+.stock .low .bar i{background:var(--color-accent)}.stock .low .q{color:var(--color-accent)}
+.tag{display:none}.stock .low .n::after{content:" · bajo mínimo";font-size:var(--text-sm);color:var(--color-accent)}
+
+.recetas{margin-top:var(--space-2xl)}
+.calc{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:var(--space-xl) var(--space-2xl);align-items:start}
+.qty{display:grid;gap:var(--space-xs);grid-column:1/-1;font-size:var(--text-sm);color:var(--color-ink-2);max-width:16rem}
+.qty input{font:500 var(--text-xl) var(--font-mono);background:none;color:var(--color-ink);border:0;border-bottom:2px solid var(--color-ink);padding:.2rem 0;width:100%}
+tr.short td{color:var(--color-accent)}
+dl.res{display:grid;gap:var(--space-md)}
+.res div{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--color-rule);padding-bottom:var(--space-sm)}
+.res dt{color:var(--color-ink-2)}.res dd{font:500 var(--text-xl) var(--font-mono)}
+.nota{font-size:var(--text-sm);color:var(--color-ink-2);margin-top:var(--space-xl)}
+
+@media (max-width:900px){
+  .grid,.calc{grid-template-columns:minmax(0,1fr)}
+  .mast .wrap{flex-wrap:wrap;gap:var(--space-md)}
+  .mast nav{order:3;flex-basis:100%}
+  .flujo{gap:var(--space-lg)}
+  .mov td:nth-child(3),.mov th:nth-child(3){display:none}
+}
+</style>
+</head>
+<body>
+<header class="mast"><div class="wrap">
+  <div class="brand">Libro Mayor</div>
+  <nav aria-label="Principal">
+    <a href="#caja" aria-current="page">Caja</a><a href="#inventario">Inventario</a><a href="#recetas">Recetas</a><a href="#perfil">Perfil</a><a href="#admin">Administración</a>
+  </nav>
+  <div class="tools"><button class="tema" data-tema type="button">Claro / oscuro</button><span class="av" aria-hidden="true">CV</span></div>
+</div></header>
+
+<main class="wrap">
+  <div class="grid">
+    <section id="caja">
+      <h1>Caja común</h1>
+      <p class="saldo" data-saldo></p>
+      <div class="flujo"><div>Entradas<b data-entradas></b></div><div class="sal">Salidas<b data-salidas></b></div></div>
+      <h2>Movimientos</h2>
+      <div id="movs"></div>
+    </section>
+    <aside class="side">
+      <section id="perfil">
+        <h2>Tu ficha</h2>
+        <div class="perfil">
+          <div class="foto" aria-hidden="true">CV</div>
+          <dl>
+            <dd class="nombre" style="grid-column:1/-1">Carlos Vega Ruiz</dd>
+            <dt>StateID</dt><dd>48213</dd>
+            <dt>Teléfono</dt><dd>555-0142</dd>
+            <dt>Rango</dt><dd>Lugarteniente</dd>
+          </dl>
+        </div>
+      </section>
+      <section id="inventario">
+        <h2>Inventario</h2>
+        <div id="stock"></div>
+      </section>
+    </aside>
+  </div>
+
+  <section class="recetas" id="recetas">
+    <h2>Receta · Cargador 9 mm</h2>
+    <div id="receta"></div>
+    <p class="nota">Datos de ejemplo para valorar el estilo. Los números reales saldrán de vuestra caja y vuestro almacén.</p>
+  </section>
+</main>
+<script src="shared.js"></script>
+</body>
+</html>

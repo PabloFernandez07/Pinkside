@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consola · Demo B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · macrostructure: Workbench · tone: technical · anchor hue: phosphor green
+ * theme: custom (consola operativa) · pre-emit critique: P4 H4 E4 S4 R4 V5 */
+:root{
+  --color-paper:oklch(95% 0.02 130);
+  --color-panel:oklch(98% 0.012 130);
+  --color-ink:oklch(26% 0.06 150);
+  --color-dim:oklch(48% 0.05 150);
+  --color-line:oklch(70% 0.06 145);
+  --color-accent:oklch(50% 0.15 50);
+  --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --space-xs:.25rem;--space-sm:.5rem;--space-md:1rem;--space-lg:1.5rem;--space-xl:2rem;
+  --text-sm:.8125rem;--text-md:.9375rem;--text-xl:1.25rem;--text-4xl:clamp(2.2rem,4.6vw,4.2rem);
+  --rail:15rem;
+}
+:root[data-theme="dark"]{
+  --color-paper:oklch(14% 0.012 150);
+  --color-panel:oklch(17% 0.014 150);
+  --color-ink:oklch(87% 0.15 150);
+  --color-dim:oklch(63% 0.09 150);
+  --color-line:oklch(38% 0.07 150);
+  --color-accent:oklch(82% 0.15 80);
+}
+*{box-sizing:border-box;margin:0}
+html,body{overflow-x:clip}
+body{background:var(--color-paper);color:var(--color-ink);font:var(--text-md)/1.5 var(--font-mono);min-height:100vh;display:grid;grid-template-columns:var(--rail) minmax(0,1fr)}
+:focus-visible{outline:2px solid var(--color-accent);outline-offset:2px}
+button{font:inherit}
+
+.rail{border-right:1px solid var(--color-line);padding:var(--space-lg);display:flex;flex-direction:column;gap:var(--space-xl);position:sticky;top:0;height:100vh}
+.logo{font-weight:700;font-size:var(--text-xl);line-height:1.1}
+.logo small{display:block;font-weight:400;font-size:var(--text-sm);color:var(--color-dim);margin-top:var(--space-xs)}
+.rail nav{display:flex;flex-direction:column;gap:.1rem}
+.rail nav a{color:var(--color-dim);text-decoration:none;padding:.35rem .5rem;white-space:nowrap}
+.rail nav a::before{content:"  ";white-space:pre}
+.rail nav a:hover{color:var(--color-ink);background:var(--color-panel)}
+.rail nav a[aria-current]{color:var(--color-ink);background:var(--color-panel)}
+.rail nav a[aria-current]::before{content:"> ";color:var(--color-accent)}
+.rail .foot{margin-top:auto;display:grid;gap:var(--space-sm);font-size:var(--text-sm);color:var(--color-dim)}
+button.tema{background:none;border:1px solid var(--color-line);color:var(--color-ink);padding:.4rem .6rem;cursor:pointer;text-align:left;white-space:nowrap}
+button.tema::before{content:"[ ";color:var(--color-dim)}button.tema::after{content:" ]";color:var(--color-dim)}
+button.tema:hover{border-color:var(--color-ink)}
+
+main{padding:var(--space-lg) min(3vw,2.5rem) var(--space-xl);min-width:0}
+.top{display:flex;justify-content:space-between;gap:var(--space-md);flex-wrap:wrap;color:var(--color-dim);font-size:var(--text-sm);margin-bottom:var(--space-lg)}
+.top b{color:var(--color-ink);font-weight:500}
+.board{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--space-lg)}
+.panel{position:relative;border:1px solid var(--color-line);background:var(--color-panel);padding:var(--space-xl) var(--space-lg) var(--space-lg);min-width:0}
+.panel>h2{position:absolute;top:0;left:var(--space-md);transform:translateY(-50%);background:var(--color-paper);padding:0 .5rem;font:500 var(--text-sm)/1 var(--font-mono);text-transform:uppercase;letter-spacing:.12em;color:var(--color-dim);font-style:normal}
+.panel>h2::before{content:"┤ "}.panel>h2::after{content:" ├"}
+.p-saldo{grid-column:span 7}.p-perfil{grid-column:span 5}
+.p-movs{grid-column:span 8}.p-stock{grid-column:span 4}
+.p-receta{grid-column:span 12}
+
+.saldo{font-size:var(--text-4xl);font-weight:700;line-height:1;overflow-wrap:anywhere}
+.saldo::after{content:"_";animation:blink 1.1s steps(1) infinite;color:var(--color-accent)}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.saldo::after{animation:none}}
+.flujo{display:flex;gap:var(--space-xl);flex-wrap:wrap;margin-top:var(--space-lg);color:var(--color-dim);font-size:var(--text-sm)}
+.flujo b{display:block;font-size:var(--text-xl);font-weight:500;color:var(--color-ink)}
+.flujo .sal b{color:var(--color-accent)}
+
+.perfil{display:grid;grid-template-columns:auto 1fr;gap:var(--space-lg);align-items:start}
+.foto{width:6rem;aspect-ratio:1;border:1px dashed var(--color-line);display:grid;place-items:center;color:var(--color-dim);font-size:var(--text-sm);text-align:center;line-height:1.2}
+.perfil dl{display:grid;grid-template-columns:auto 1fr;gap:.3rem var(--space-md);font-size:var(--text-sm)}
+.perfil dt{color:var(--color-dim)}.perfil dt::after{content:":"}.perfil dd{overflow-wrap:anywhere}
+
+table{width:100%;border-collapse:collapse;font-size:var(--text-sm)}
+th{text-align:left;color:var(--color-dim);font-weight:400;padding:0 var(--space-md) var(--space-sm) 0;border-bottom:1px dashed var(--color-line)}
+td{padding:.4rem var(--space-md) .4rem 0}
+.mov td:first-child{color:var(--color-dim);white-space:nowrap}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+th.num{text-align:right;padding-right:0}.num:last-child{padding-right:0}
+tr.out td.num,tr.short td{color:var(--color-accent)}
+.mov tbody tr:hover{background:var(--color-paper)}
+
+ul.stock{list-style:none;padding:0;display:grid;gap:var(--space-md)}
+.stock li{display:grid;grid-template-columns:1fr auto;gap:.2rem var(--space-md);font-size:var(--text-sm)}
+.stock small{color:var(--color-dim)}.stock .q{text-align:right}
+.stock .bar{grid-column:1/-1;height:.7rem;background:repeating-linear-gradient(90deg,var(--color-line) 0 2px,transparent 2px 6px)}
+.stock .bar i{display:block;height:100%;background:repeating-linear-gradient(90deg,var(--color-ink) 0 4px,transparent 4px 6px)}
+.stock .low .bar i{background:repeating-linear-gradient(90deg,var(--color-accent) 0 4px,transparent 4px 6px)}
+.stock .low .n,.stock .low .q{color:var(--color-accent)}
+.tag{display:none}.stock .low .n::after{content:" !! bajo";font-weight:700}
+
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-lg) var(--space-xl);align-items:start}
+.qty{grid-column:1/-1;display:flex;align-items:center;gap:var(--space-md);font-size:var(--text-sm);color:var(--color-dim);flex-wrap:wrap}
+.qty input{font:700 var(--text-xl) var(--font-mono);background:var(--color-paper);color:var(--color-ink);border:1px solid var(--color-line);padding:.3rem .6rem;width:8rem}
+.qty::before{content:"$ cargador --uds";color:var(--color-ink)}
+dl.res{display:grid;gap:.5rem;font-size:var(--text-sm)}
+.res div{display:flex;justify-content:space-between;gap:var(--space-md);border-bottom:1px dashed var(--color-line);padding-bottom:.4rem}
+.res dt{color:var(--color-dim)}.res dd{font-weight:700;font-size:var(--text-md)}
+
+@media (max-width:1100px){
+  .p-saldo,.p-perfil,.p-movs,.p-stock{grid-column:span 12}
+}
+@media (max-width:800px){
+  body{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--color-line);gap:var(--space-md)}
+  .rail nav{flex-direction:row;overflow-x:auto;scrollbar-width:none}
+  .rail .foot{margin-top:0;grid-auto-flow:column;justify-content:space-between;align-items:center}
+  .calc,.perfil{grid-template-columns:minmax(0,1fr)}
+  .mov td:nth-child(3),.mov th:nth-child(3){display:none}
+}
+</style>
+</head>
+<body>
+<aside class="rail">
+  <div class="logo">BANDA://<small>panel interno v0.1</small></div>
+  <nav aria-label="Principal">
+    <a href="#caja" aria-current="page">caja</a><a href="#inventario">inventario</a><a href="#recetas">recetas</a><a href="#perfil">perfil</a><a href="#admin">admin</a>
+  </nav>
+  <div class="foot"><span>sesión: cvega · Lugarteniente</span><button class="tema" data-tema type="button">tema</button></div>
+</aside>
+
+<main>
+  <div class="top"><span>estado: <b>conectado</b></span><span>datos de ejemplo</span></div>
+  <div class="board">
+    <section class="panel p-saldo" id="caja">
+      <h2>Caja común</h2>
+      <p class="saldo" data-saldo></p>
+      <div class="flujo"><div>entradas<b data-entradas></b></div><div class="sal">salidas<b data-salidas></b></div></div>
+    </section>
+
+    <section class="panel p-perfil" id="perfil">
+      <h2>Perfil</h2>
+      <div class="perfil">
+        <div class="foto">sin<br>foto</div>
+        <dl>
+          <dt>nombre</dt><dd>Carlos Vega Ruiz</dd>
+          <dt>stateid</dt><dd>48213</dd>
+          <dt>teléfono</dt><dd>555-0142</dd>
+          <dt>rango</dt><dd>Lugarteniente</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="panel p-movs">
+      <h2>Movimientos</h2>
+      <div id="movs"></div>
+    </section>
+
+    <section class="panel p-stock" id="inventario">
+      <h2>Inventario</h2>
+      <div id="stock"></div>
+    </section>
+
+    <section class="panel p-receta" id="recetas">
+      <h2>Receta · Cargador 9 mm</h2>
+      <div id="receta"></div>
+    </section>
+  </div>
+</main>
+<script src="shared.js"></script>
+</body>
+</html>

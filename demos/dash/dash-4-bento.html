@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bento · Banda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=Fragment+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dash.css">
+<style>
+/* Hallmark · macrostructure: Bento Grid (bottom-dock dashboard) · tone: playful-warm · anchor hue: coral
+ * theme: custom (bento pop) · pre-emit critique: P4 H4 E4 S4 R3 V5 */
+:root{
+  --bg:oklch(94.5% .03 80);--surface:oklch(98.8% .012 85);--surface-2:oklch(94% .025 80);
+  --text:oklch(23% .03 40);--muted:oklch(50% .03 50);--line:oklch(90% .025 80);
+  --accent:oklch(67% .17 32);--accent-ink:oklch(99% .01 85);
+  --danger:oklch(55% .2 28);--ok:oklch(50% .13 155);--warn:oklch(58% .15 65);--c1:oklch(67% .17 32);--c2:oklch(70% .11 200);
+  --t2:oklch(90.5% .07 160);--t3:oklch(93.5% .09 98);--t4:oklch(91.5% .05 235);--t5:oklch(91.5% .06 305);
+  --radius:28px;--radius-s:14px;--gap:1rem;--pad:1.35rem;--pad-view:0 1.25rem 1rem;
+  --shadow:0 2px 0 oklch(80% .04 70 / .35);
+  --font-body:"Bricolage Grotesque",system-ui,sans-serif;--font-mono:"Fragment Mono",ui-monospace,monospace;
+  --h1:700 2.2rem/1 var(--font-body);--h2:700 1.05rem/1.2 var(--font-body);--kpi-size:2.3rem;--kpi-weight:700;
+}
+:root[data-theme="dark"]{
+  --bg:oklch(19% .025 290);--surface:oklch(24% .028 290);--surface-2:oklch(29% .03 290);
+  --text:oklch(95% .015 85);--muted:oklch(72% .03 290);--line:oklch(32% .03 290);
+  --accent:oklch(72% .16 30);--accent-ink:oklch(18% .02 290);
+  --danger:oklch(72% .17 28);--ok:oklch(78% .14 155);--warn:oklch(82% .13 80);--c1:oklch(72% .16 30);--c2:oklch(76% .11 200);
+  --t2:oklch(34% .06 160);--t3:oklch(36% .07 98);--t4:oklch(34% .05 235);--t5:oklch(34% .06 305);
+  --shadow:none;
+}
+.shell{display:flex;flex-direction:column;height:100dvh}
+.hello{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.25rem .5rem}
+.greet{flex:1;display:grid}.greet b{font:700 1.5rem/1.1 var(--font-body);letter-spacing:-.02em}
+.stage{flex:1}
+.kpi{border:0;color:var(--text)}
+.kpi:nth-child(1){background:var(--accent);color:var(--accent-ink)}
+.kpi:nth-child(2){background:var(--t2)}.kpi:nth-child(3){background:var(--t3)}.kpi:nth-child(4){background:var(--t4)}.kpi:nth-child(5){background:var(--t5)}
+.kpi .l,.kpi .s{color:inherit;opacity:.72}
+.kpi.warn .v{color:inherit}
+.kpi:nth-child(1) .ch-line{stroke:var(--accent-ink)}
+.card{border:0}
+.card>header{padding-bottom:.7rem}
+.btn{border-radius:999px}.btn.sm{padding:.3rem .8rem}
+.chip,.bar,.bar i,.hbars i{border-radius:999px}
+tbody tr:hover td{background:var(--surface-2)}
+.dockwrap{display:flex;justify-content:center;padding:.4rem 1rem 1rem}
+.dock#nav{background:var(--text);border-radius:999px;padding:.4rem;gap:.2rem;max-width:100%;overflow-x:auto;scrollbar-width:none;flex-direction:row}
+.dock#nav a{color:var(--bg);opacity:.72;border-radius:999px;padding:.55rem 1rem}
+.dock#nav a:hover{background:oklch(100% 0 0 / .12);opacity:1;color:var(--bg)}
+.dock#nav a[aria-current]{background:var(--accent);color:var(--accent-ink);opacity:1}
+.dock#nav .badge{margin-left:.2rem;background:var(--bg);color:var(--text)}
+@media (max-width:1000px){
+  .shell{height:auto;min-height:100dvh}.hello{flex-wrap:wrap;padding:1rem}
+  .dockwrap{position:sticky;bottom:0;padding-top:.6rem}.demo{display:none}
+  .dock#nav a span{display:none}.dock#nav a{padding:.65rem .9rem}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="hello">
+    <div class="greet"><small>Caja común · lunes 12 de octubre</small><b>Buenas noches, Carlos</b></div>
+    <span class="demo">datos de ejemplo</span>
+    <button class="btn ghost sm" data-tema type="button">Tema</button>
+    <span class="avatar">CV</span>
+  </header>
+  <div class="stage"><main id="view" class="view"></main></div>
+  <footer class="dockwrap"><nav id="nav" class="dock" aria-label="Principal"></nav></footer>
+</div>
+<script src="dash.js"></script>
+</body>
+</html>

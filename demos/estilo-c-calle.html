@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calle · Demo C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · macrostructure: Bento Grid (poster) · tone: brutalist · anchor hue: signal orange
+ * theme: custom (calle / cartel) · pre-emit critique: P4 H5 E4 S4 R3 V5 */
+:root{
+  --color-paper:oklch(96% 0.025 95);
+  --color-tile:oklch(99% 0.01 95);
+  --color-ink:oklch(15% 0.01 90);
+  --color-dim:oklch(40% 0.02 90);
+  --color-accent:oklch(68% 0.21 45);
+  --color-on-accent:oklch(15% 0.01 90);
+  --font-display:"Anton",Impact,sans-serif;
+  --font-body:"Archivo",system-ui,sans-serif;
+  --font-mono:"Space Mono",ui-monospace,monospace;
+  --space-xs:.25rem;--space-sm:.5rem;--space-md:1rem;--space-lg:1.5rem;--space-xl:2.5rem;
+  --text-sm:.875rem;--text-md:1rem;--text-xl:1.5rem;--text-huge:clamp(3.2rem,9vw,8.5rem);
+  --border:3px solid var(--color-ink);--shadow:6px 6px 0 var(--color-ink);
+  --wrap:min(1700px,95vw);
+}
+:root[data-theme="dark"]{
+  --color-paper:oklch(14% 0.01 90);
+  --color-tile:oklch(19% 0.012 90);
+  --color-ink:oklch(96% 0.02 95);
+  --color-dim:oklch(75% 0.02 90);
+  --color-accent:oklch(70% 0.2 45);
+}
+*{box-sizing:border-box;margin:0}
+html,body{overflow-x:clip}
+body{background:var(--color-paper);color:var(--color-ink);font:var(--text-md)/1.5 var(--font-body)}
+:focus-visible{outline:3px solid var(--color-accent);outline-offset:3px}
+.wrap{width:var(--wrap);margin-inline:auto}
+
+header{border-bottom:var(--border);background:var(--color-accent);color:var(--color-on-accent)}
+header .wrap{display:flex;align-items:stretch;gap:var(--space-lg)}
+.logo{font:var(--text-xl)/1 var(--font-display);text-transform:uppercase;padding:var(--space-md) var(--space-lg);background:var(--color-ink);color:var(--color-paper);letter-spacing:.03em;white-space:nowrap;display:flex;align-items:center}
+header nav{display:flex;flex:1;overflow-x:auto;scrollbar-width:none}
+header nav a{display:flex;align-items:center;padding:0 var(--space-lg);color:var(--color-on-accent);text-decoration:none;font:700 var(--text-sm) var(--font-body);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;border-left:var(--border)}
+header nav a:last-child{border-right:var(--border)}
+header nav a:hover,header nav a[aria-current]{background:var(--color-ink);color:var(--color-paper)}
+button.tema{font:700 var(--text-sm) var(--font-body);text-transform:uppercase;letter-spacing:.06em;background:none;color:var(--color-on-accent);border:0;padding:0 var(--space-md);cursor:pointer;white-space:nowrap}
+button.tema:hover{background:var(--color-ink);color:var(--color-paper)}
+
+main{padding-block:var(--space-xl) 5rem}
+.bento{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--space-lg)}
+.tile{border:var(--border);background:var(--color-tile);padding:var(--space-lg);box-shadow:var(--shadow);min-width:0}
+h2{font:var(--text-xl)/1 var(--font-display);text-transform:uppercase;letter-spacing:.02em;margin-bottom:var(--space-md);font-style:normal;font-weight:400}
+.t-saldo{grid-column:span 8;background:var(--color-ink);color:var(--color-paper);position:relative;overflow:hidden}
+.t-saldo h2{color:var(--color-accent)}
+.saldo{font:var(--text-huge)/.95 var(--font-display);letter-spacing:.01em;overflow-wrap:anywhere}
+.sticker{position:absolute;right:var(--space-lg);top:var(--space-lg);background:var(--color-accent);color:var(--color-on-accent);font:700 var(--text-sm) var(--font-mono);padding:.3rem .7rem;border:var(--border);border-color:var(--color-paper);transform:rotate(3deg)}
+.flujo{display:flex;gap:var(--space-xl);flex-wrap:wrap;margin-top:var(--space-lg);font:var(--text-sm) var(--font-mono);color:var(--color-dim)}
+.t-saldo .flujo{color:oklch(75% 0.02 90)}
+.flujo b{display:block;font:var(--text-xl) var(--font-display);letter-spacing:.02em;color:inherit}
+.t-saldo .flujo b{color:var(--color-paper)}
+.flujo .sal b{color:var(--color-accent)}
+.t-perfil{grid-column:span 4;background:var(--color-accent);color:var(--color-on-accent)}
+.t-perfil .foto{width:100%;max-width:9rem;aspect-ratio:1;border:var(--border);background:var(--color-tile);display:grid;place-items:center;font:3rem var(--font-display);color:var(--color-ink);margin-bottom:var(--space-md)}
+.perfil dd.nombre{font:2rem/1 var(--font-display);text-transform:uppercase;margin-bottom:var(--space-md)}
+.perfil dl{display:grid;grid-template-columns:auto 1fr;gap:.2rem var(--space-md);font:var(--text-sm) var(--font-mono)}
+.perfil dt{opacity:.75}.perfil dd{font-weight:700;overflow-wrap:anywhere}
+.t-movs{grid-column:span 7}.t-stock{grid-column:span 5}.t-receta{grid-column:span 12}
+
+table{width:100%;border-collapse:collapse}
+th{font:700 .75rem var(--font-body);text-transform:uppercase;letter-spacing:.08em;text-align:left;padding:.4rem .5rem;background:var(--color-ink);color:var(--color-paper)}
+td{padding:.55rem .5rem;border-bottom:2px solid var(--color-ink)}
+.num{text-align:right;font-family:var(--font-mono);font-weight:700;white-space:nowrap}
+tr.in td.num{background:color-mix(in oklch,var(--color-accent) 22%,transparent)}
+tr.out td.num,tr.short td.num{text-decoration:underline;text-decoration-thickness:3px;text-decoration-color:var(--color-accent);text-underline-offset:3px}
+.mov td:first-child{font:var(--text-sm) var(--font-mono);white-space:nowrap}
+
+ul.stock{list-style:none;padding:0;display:grid;gap:var(--space-sm)}
+.stock li{display:grid;grid-template-columns:1fr auto auto;gap:.3rem var(--space-md);align-items:center;padding:.5rem .7rem;border:2px solid var(--color-ink)}
+.stock .n{font-weight:700;text-transform:uppercase}.stock .q{font:700 var(--text-md) var(--font-mono)}.stock small{opacity:.6}
+.stock .bar{grid-column:1/-1;height:.6rem;border:2px solid var(--color-ink)}
+.stock .bar i{display:block;height:100%;background:var(--color-ink)}
+.stock .low{background:var(--color-accent);color:var(--color-on-accent)}
+.stock .low .bar i{background:var(--color-on-accent)}
+.stock .low .bar{border-color:var(--color-on-accent)}
+.tag{grid-row:1;grid-column:3;font:700 .7rem var(--font-mono);text-transform:uppercase;background:var(--color-on-accent);color:var(--color-accent);padding:.1rem .4rem}
+
+.calc{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:var(--space-lg) var(--space-xl);align-items:start}
+.qty{grid-column:1/-1;display:flex;align-items:center;gap:var(--space-md);font:700 var(--text-sm) var(--font-body);text-transform:uppercase;letter-spacing:.06em;flex-wrap:wrap}
+.qty input{font:3rem/1 var(--font-display);width:9rem;background:var(--color-paper);color:var(--color-ink);border:var(--border);padding:.2rem .6rem;box-shadow:4px 4px 0 var(--color-accent)}
+dl.res{display:grid;gap:var(--space-md)}
+.res div{border:var(--border);padding:var(--space-sm) var(--space-md);display:flex;justify-content:space-between;align-items:baseline;gap:var(--space-md);background:var(--color-paper)}
+.res dt{font:700 var(--text-sm) var(--font-body);text-transform:uppercase}.res dd{font:1.7rem/1 var(--font-display)}
+.res div:nth-child(3){background:var(--color-accent);color:var(--color-on-accent)}
+.nota{margin-top:var(--space-xl);font:var(--text-sm) var(--font-mono);color:var(--color-dim)}
+
+@media (max-width:1000px){
+  .t-saldo,.t-perfil,.t-movs,.t-stock{grid-column:span 12}
+  .calc{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  header .wrap{flex-wrap:wrap;gap:0}
+  .logo{flex:1}header nav{order:3;flex-basis:100%;border-top:var(--border)}
+  header nav a{padding-block:.7rem}header nav a:first-child{border-left:0}
+  .mov td:nth-child(3),.mov th:nth-child(3){display:none}
+  .sticker{position:static;display:inline-block;margin-bottom:var(--space-md)}
+}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="logo">Banda</div>
+  <nav aria-label="Principal">
+    <a href="#caja" aria-current="page">Caja</a><a href="#inventario">Inventario</a><a href="#recetas">Recetas</a><a href="#perfil">Perfil</a><a href="#admin">Admin</a>
+  </nav>
+  <button class="tema" data-tema type="button">Claro / oscuro</button>
+</div></header>
+
+<main class="wrap">
+  <div class="bento">
+    <section class="tile t-saldo" id="caja">
+      <span class="sticker">DATOS DE EJEMPLO</span>
+      <h2>Caja común</h2>
+      <p class="saldo" data-saldo></p>
+      <div class="flujo"><div>Entra<b data-entradas></b></div><div class="sal">Sale<b data-salidas></b></div></div>
+    </section>
+
+    <section class="tile t-perfil perfil" id="perfil">
+      <div class="foto" aria-hidden="true">CV</div>
+      <dl>
+        <dd class="nombre" style="grid-column:1/-1">Carlos Vega Ruiz</dd>
+        <dt>StateID</dt><dd>48213</dd>
+        <dt>Tel.</dt><dd>555-0142</dd>
+        <dt>Rango</dt><dd>Lugarteniente</dd>
+      </dl>
+    </section>
+
+    <section class="tile t-movs">
+      <h2>Movimientos</h2>
+      <div id="movs"></div>
+    </section>
+
+    <section class="tile t-stock" id="inventario">
+      <h2>Inventario</h2>
+      <div id="stock"></div>
+    </section>
+
+    <section class="tile t-receta" id="recetas">
+      <h2>Receta · Cargador 9 mm</h2>
+      <div id="receta"></div>
+    </section>
+  </div>
+</main>
+<script src="shared.js"></script>
+</body>
+</html>

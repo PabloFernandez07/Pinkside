@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HUD · Banda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dash.css">
+<style>
+/* Hallmark · macrostructure: Workbench (icon-rail HUD) · tone: tactical · anchor hue: amber
+ * theme: custom (hud) · pre-emit critique: P4 H4 E4 S4 R4 V5 */
+:root{
+  --bg:oklch(12.5% .01 85);--surface:oklch(16.5% .012 85);--surface-2:oklch(21% .014 85);
+  --text:oklch(91% .03 85);--muted:oklch(66% .04 85);--line:oklch(31% .04 82);
+  --accent:oklch(80% .16 80);--accent-ink:oklch(14% .02 85);
+  --danger:oklch(68% .2 25);--ok:oklch(78% .15 140);--warn:oklch(80% .16 80);--c1:oklch(80% .16 80);--c2:oklch(72% .11 205);
+  --radius:0;--radius-s:0;--gap:.9rem;--pad:1rem;--pad-view:1.1rem;--shadow:none;
+  --font-body:"Chakra Petch",system-ui,sans-serif;--font-mono:"Share Tech Mono",ui-monospace,monospace;
+  --h1:600 1.35rem/1.1 var(--font-body);--h2:600 .8125rem/1.2 var(--font-body);--kpi-size:2rem;--kpi-weight:500;
+}
+:root[data-theme="light"]{
+  --bg:oklch(91% .018 90);--surface:oklch(95.5% .014 90);--surface-2:oklch(89% .02 90);
+  --text:oklch(22% .03 80);--muted:oklch(46% .04 80);--line:oklch(74% .05 85);
+  --accent:oklch(50% .15 55);--accent-ink:oklch(98% .01 90);
+  --danger:oklch(50% .2 25);--ok:oklch(46% .13 145);--warn:oklch(50% .15 60);--c1:oklch(50% .15 55);--c2:oklch(46% .09 215);
+}
+.shell{display:grid;grid-template-columns:4.75rem minmax(0,1fr);height:100dvh}
+.rail{border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;padding:.9rem 0;gap:1.1rem;position:relative;z-index:30}
+.glyph{width:2.4rem;height:2.4rem;border:2px solid var(--accent);display:grid;place-items:center;font:700 .8rem var(--font-mono);color:var(--accent);clip-path:polygon(0 0,70% 0,100% 30%,100% 100%,30% 100%,0 70%)}
+.rail #nav{gap:.4rem}
+.rail #nav a{position:relative;width:3rem;height:3rem;padding:0;justify-content:center;border-radius:0}
+.rail #nav a svg{width:1.4rem;height:1.4rem}
+.rail #nav a[aria-current]{background:var(--surface-2);color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.rail #nav a span{position:absolute;left:calc(100% + .7rem);top:50%;transform:translateY(-50%);background:var(--surface-2);border:1px solid var(--line);padding:.25rem .6rem;font:.75rem var(--font-mono);text-transform:uppercase;letter-spacing:.1em;color:var(--text);opacity:0;pointer-events:none;transition:opacity .12s}
+.rail #nav a:hover span,.rail #nav a:focus-visible span{opacity:1}
+.rail #nav .badge{position:absolute;top:.2rem;right:.2rem;margin:0}
+.rail .avatar{margin-top:auto;border-radius:0;clip-path:polygon(0 0,70% 0,100% 30%,100% 100%,30% 100%,0 70%)}
+.status{display:flex;align-items:center;gap:1.5rem;padding:.55rem 1.25rem;border-bottom:1px solid var(--line);font:.75rem var(--font-mono);text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.status .on{color:var(--ok);display:flex;align-items:center;gap:.4rem}.status .on::before{content:"";width:.5rem;height:.5rem;background:var(--ok)}
+.status #crumb{color:var(--text);flex:1}
+.status .btn{border-radius:0;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.1em}
+.card,.kpi{clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.kpi{border-left:3px solid var(--accent)}
+.kpi .l{font:.75rem var(--font-mono);text-transform:uppercase;letter-spacing:.1em}
+.kpi .v{font-family:var(--font-body)}
+.card h2,.alerts h3,th{text-transform:uppercase;letter-spacing:.12em;font-family:var(--font-mono);font-weight:400}
+.phead h1{text-transform:uppercase;letter-spacing:.08em}
+.btn{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;font-weight:400}
+.chip{border-radius:0}.bar,.bar i,.hbars i{border-radius:0}
+dialog{clip-path:none}
+@media (prefers-reduced-motion:reduce){.rail #nav a span{transition:none}}
+@media (max-width:1000px){
+  .shell{display:block;height:auto}
+  .rail{flex-direction:row;padding:.5rem;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .rail #nav{flex-direction:row}.rail #nav a span{display:none}.rail .avatar{margin:0 0 0 auto}
+  .status{padding:.5rem 1rem;gap:.8rem}.status .demo{display:none}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="rail">
+    <div class="glyph" aria-hidden="true">BN</div>
+    <nav id="nav" aria-label="Principal"></nav>
+    <span class="avatar" title="Carlos Vega">CV</span>
+  </aside>
+  <div class="stage">
+    <header class="status">
+      <span class="on">Sistema en línea</span><span id="crumb"></span>
+      <span class="demo">datos de ejemplo</span>
+      <button class="btn ghost sm" data-tema type="button">Tema</button>
+    </header>
+    <main id="view" class="view"></main>
+  </div>
+</div>
+<script src="dash.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { cookies } from 'next/headers'
 import { DM_Mono, DM_Sans } from 'next/font/google'
 import Script from 'next/script'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import {
   ACCENT_COOKIE,
   DEFAULT_ACCENT,
@@ -47,6 +48,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     >
       <body>
         {children}
+        <SpeedInsights />
         <Script id="theme-pref" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </body>
     </html>

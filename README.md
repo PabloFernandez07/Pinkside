@@ -43,6 +43,9 @@ Nunca pongas en el repositorio ni en variables `NEXT_PUBLIC_*` la clave `service
    `http://localhost:3000/auth/callback` para desarrollo) y fija *Site URL* a tu dominio.
 4. **Primer Líder:** en `app_settings`, clave `bootstrap_admin_discord_ids`, pon un array JSON con tu ID de Discord
    (`["123456789012345678"]`). Quien inicie sesión con ese ID pasa a Líder activo al completar su ficha.
+   **Lista de acceso:** solo pueden registrarse los IDs de Discord de la tabla `allowed_discord_ids` (y los de
+   `bootstrap_admin_discord_ids`). Quien tiene el permiso `members.allow` (por defecto Líder y Lugarteniente) los
+   añade y quita en **Miembros → Acceso permitido**. Quitar un ID bloquea la cuenta si ya existía.
 5. **Storage:** la migración 0012 crea el bucket público `item-images` (256 KB, WebP/PNG/JPG). Solo `inventory.edit`
    sube o borra fotos.
 6. **Claves JWT:** el proyecto debe usar claves de firma asimétricas (Project Settings → JWT Keys) para que la sesión

@@ -1,14 +1,15 @@
 // Pinkside · Envío de MD de Discord para pedidos urgentes (Edge Function de Supabase, runtime Deno).
 //
-// ESTADO: preparada, NO desplegada. Necesita dos secretos que pone el dueño del proyecto en Supabase
-// (Edge Functions → Secrets): DISCORD_BOT_TOKEN y URGENT_WORKER_SECRET. Nunca van en el repositorio.
+// ESTADO: desplegada (verify_jwt desactivado: la autenticación es la cabecera `x-worker-secret`). Necesita dos
+// secretos que pone el dueño del proyecto en Supabase (Edge Functions → Secrets): DISCORD_BOT_TOKEN y
+// URGENT_WORKER_SECRET, y el mismo valor de este último en Vault como `urgent_worker_secret` para el trigger.
 // SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY los inyecta Supabase automáticamente en la función.
 //
 // Cómo funciona: lee los avisos `pending` de pedidos aún abiertos, abre un MD con cada destinatario por su
 // Discord ID y los marca `sent` o `failed`. Escribe a quien haya instalado la aplicación en su cuenta
 // (User Install, sin servidor compartido; verificado con dos cuentas). Quien no la instaló recibe `failed`.
-// Se invoca con POST y la cabecera `x-worker-secret` (p. ej. desde un Database Webhook al insertar en
-// `urgent_notifications`, o desde un cron cada minuto).
+// Se invoca con POST y la cabecera `x-worker-secret`: lo hace el trigger `urgent_notifications_dm` (migración
+// 0020) en cuanto se encolan avisos, así el MD sale al crear el pedido.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -48,28 +49,52 @@ async function discord(path: string, token: string, body: unknown): Promise<Resp
   })
 }
 
+const CLAIM_MARK = 'enviando'
+
+// Comparación en tiempo constante (no revela cuántos caracteres del secreto coinciden).
+function sameSecret(given: string, expected: string): boolean {
+  const a = new TextEncoder().encode(given)
+  const b = new TextEncoder().encode(expected)
+  let diff = a.length ^ b.length
+  for (let i = 0; i < b.length; i++) diff |= (a[i] ?? 0) ^ b[i]
+  return diff === 0
+}
+
 type Outcome = { status: 'sent' | 'failed' | 'skipped'; error?: string }
 
 Deno.serve(async (req) => {
   const token = Deno.env.get('DISCORD_BOT_TOKEN')
   const secret = Deno.env.get('URGENT_WORKER_SECRET')
   if (!token || !secret) return new Response('No configurado', { status: 503 })
-  if (req.method !== 'POST' || req.headers.get('x-worker-secret') !== secret) {
+  if (req.method !== 'POST' || !sameSecret(req.headers.get('x-worker-secret') ?? '', secret)) {
     return new Response('No autorizado', { status: 401 })
   }
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const { data: pending, error } = await db
+  const { data: queued, error: queueError } = await db
     .from('urgent_notifications')
-    .select('id, recipient:profiles(discord_id), request:urgent_requests(priority, title, body, author_name, status, item:items(name))')
+    .select('id')
     .eq('status', 'pending')
+    .is('error', null)
     .order('id')
     .limit(BATCH)
-  if (error) return new Response('Error leyendo la cola', { status: 500 })
+  if (queueError) return new Response('Error leyendo la cola', { status: 500 })
+
+  // Reserva atómica: solo la ejecución que consigue cambiar `error` de null a 'enviando' se queda con la fila,
+  // así dos ejecuciones simultáneas (dos pedidos seguidos) nunca envían el mismo aviso dos veces.
+  const { data: pending, error } = await db
+    .from('urgent_notifications')
+    .update({ error: CLAIM_MARK })
+    .in('id', (queued ?? []).map((row) => row.id))
+    .eq('status', 'pending')
+    .is('error', null)
+    .select('id, recipient:profiles(discord_id), request:urgent_requests(priority, title, body, author_name, status, item:items(name))')
+  if (error) return new Response('Error reservando la cola', { status: 500 })
 
   let sent = 0
   let failed = 0
-  // ponytail: envío secuencial y un solo trabajador a la vez; si hiciera falta más caudal, reservar filas con un RPC.
+  const done = new Set<number>()
+  // ponytail: envío secuencial; si una ejecución muere a mitad, sus filas quedan con error 'enviando' (revisar a mano).
   for (const row of pending ?? []) {
     const request = row.request as RequestRow | null
     const discordId = (row.recipient as { discord_id: string } | null)?.discord_id
@@ -102,9 +127,14 @@ Deno.serve(async (req) => {
         sent_at: outcome.status === 'sent' ? new Date().toISOString() : null,
       })
       .eq('id', row.id)
+    done.add(row.id)
     if (outcome.status === 'sent') sent += 1
     else if (outcome.status === 'failed') failed += 1
   }
+
+  // Límite de Discord (429): las filas sin procesar vuelven a la cola para el siguiente pedido.
+  const unprocessed = (pending ?? []).map((row) => row.id).filter((id) => !done.has(id))
+  if (unprocessed.length > 0) await db.from('urgent_notifications').update({ error: null }).in('id', unprocessed)
 
   return Response.json({ processed: (pending ?? []).length, sent, failed })
 })

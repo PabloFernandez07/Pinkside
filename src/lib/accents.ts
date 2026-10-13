@@ -18,6 +18,18 @@ export const THEMES: ReadonlyArray<{ id: ThemeId; label: string }> = [
   { id: 'dark', label: 'Oscuro' },
 ]
 
+/**
+ * Color RGB de cada acento (los mismos oklch de globals.css pasados a sRGB) para el recuadro del MD de Discord.
+ * La Edge Function send-urgent-dms tiene una copia: mantenlas iguales.
+ */
+export const ACCENT_COLORS: Record<AccentId, string> = {
+  emerald: '#54bf92',
+  pink: '#ff6cae',
+  indigo: '#8a9cff',
+  amber: '#d78c00',
+  cyan: '#00728a',
+}
+
 export const DEFAULT_ACCENT: AccentId = 'pink'
 export const DEFAULT_THEME: ThemeId = 'system'
 

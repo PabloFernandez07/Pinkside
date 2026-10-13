@@ -1,32 +1,40 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_DM_LENGTH, buildDm, describeDelivery, summarizeDelivery } from '@/lib/urgent'
+import { EMBED_LIMITS, buildDm, describeDelivery, summarizeDelivery } from '@/lib/urgent'
 
 const base = { priority: 'critical', title: 'Falta acero', body: null, authorName: 'Lucía Romero', itemName: null } as const
 
 describe('buildDm', () => {
   it('construye el aviso mínimo', () => {
-    expect(buildDm(base)).toBe(
-      ['🚨 **URGENTE · Prioridad crítica**', '**Falta acero**', 'Pedido por Lucía Romero · Pinkside'].join('\n'),
-    )
+    expect(buildDm(base)).toEqual({
+      heading: '🚨 **URGENTE · Prioridad crítica**',
+      title: 'Falta acero',
+      description: null,
+      fields: [],
+      footer: 'Pedido por Lucía Romero · Pinkside',
+    })
   })
 
   it('prioridad alta usa otro icono y texto', () => {
-    expect(buildDm({ ...base, priority: 'high' })).toContain('⚠️ **URGENTE · Prioridad alta**')
+    expect(buildDm({ ...base, priority: 'high' }).heading).toBe('⚠️ **URGENTE · Prioridad alta**')
   })
 
   it('incluye detalle e item cuando existen, recortando espacios', () => {
-    const text = buildDm({ ...base, title: '  Falta acero ', body: '  Para el crafteo de hoy ', itemName: 'Acero' })
-    expect(text).toContain('**Falta acero**\nPara el crafteo de hoy\nItem: Acero\nPedido por')
+    const card = buildDm({ ...base, title: '  Falta acero ', body: '  Para el crafteo de hoy ', itemName: 'Acero' })
+    expect(card.title).toBe('Falta acero')
+    expect(card.description).toBe('Para el crafteo de hoy')
+    expect(card.fields).toEqual([{ name: 'Item', value: 'Acero' }])
   })
 
   it('ignora un detalle que solo tiene espacios', () => {
-    expect(buildDm({ ...base, body: '   ' })).not.toContain('\n\n')
+    expect(buildDm({ ...base, body: '   ' }).description).toBeNull()
   })
 
-  it('no supera el límite de Discord', () => {
-    const text = buildDm({ ...base, body: 'x'.repeat(5000) })
-    expect(text.length).toBeLessThanOrEqual(MAX_DM_LENGTH)
-    expect(text.endsWith('…')).toBe(true)
+  it('no supera los límites del recuadro de Discord', () => {
+    const card = buildDm({ ...base, title: 't'.repeat(999), body: 'x'.repeat(9999), itemName: 'i'.repeat(9999) })
+    expect(card.title).toHaveLength(EMBED_LIMITS.title)
+    expect(card.description).toHaveLength(EMBED_LIMITS.description)
+    expect(card.fields[0]?.value).toHaveLength(EMBED_LIMITS.field)
+    expect(card.title.endsWith('…')).toBe(true)
   })
 })
 

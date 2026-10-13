@@ -15,9 +15,22 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const DISCORD_API = 'https://discord.com/api/v10'
 const BATCH = 25
-const MAX_DM_LENGTH = 1800
 
 const PRIORITY_LABEL: Record<string, string> = { high: 'alta', critical: 'crítica' }
+
+// Mismos colores que ACCENT_COLORS de src/lib/accents.ts (el recuadro lleva el acento de cada destinatario).
+const ACCENT_COLORS: Record<string, string> = {
+  emerald: '#54bf92',
+  pink: '#ff6cae',
+  indigo: '#8a9cff',
+  amber: '#d78c00',
+  cyan: '#00728a',
+}
+const DEFAULT_ACCENT = 'pink'
+
+// Límites de un embed de Discord.
+const LIMITS = { title: 256, description: 4096, field: 1024, footer: 2048 }
+const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text)
 
 interface RequestRow {
   priority: string
@@ -25,20 +38,26 @@ interface RequestRow {
   body: string | null
   author_name: string
   status: string
+  created_at: string
   item: { name: string } | null
 }
 
 // Debe coincidir con `buildDm` de src/lib/urgent.ts (es lo que ve la vista previa de la web).
-function buildDm(request: RequestRow): string {
-  const lines = [
-    `${request.priority === 'critical' ? '🚨' : '⚠️'} **URGENTE · Prioridad ${PRIORITY_LABEL[request.priority] ?? request.priority}**`,
-    `**${request.title.trim()}**`,
-  ]
-  if (request.body?.trim()) lines.push(request.body.trim())
-  if (request.item?.name) lines.push(`Item: ${request.item.name}`)
-  lines.push(`Pedido por ${request.author_name} · Pinkside`)
-  const text = lines.join('\n')
-  return text.length > MAX_DM_LENGTH ? `${text.slice(0, MAX_DM_LENGTH - 1)}…` : text
+function buildDm(request: RequestRow, accent: string | undefined) {
+  const hex = ACCENT_COLORS[accent ?? ''] ?? ACCENT_COLORS[DEFAULT_ACCENT]
+  return {
+    content: `${request.priority === 'critical' ? '🚨' : '⚠️'} **URGENTE · Prioridad ${PRIORITY_LABEL[request.priority] ?? request.priority}**`,
+    embeds: [
+      {
+        title: clip(request.title.trim(), LIMITS.title),
+        ...(request.body?.trim() ? { description: clip(request.body.trim(), LIMITS.description) } : {}),
+        color: Number.parseInt(hex.slice(1), 16),
+        ...(request.item?.name ? { fields: [{ name: 'Item', value: clip(request.item.name, LIMITS.field) }] } : {}),
+        footer: { text: clip(`Pedido por ${request.author_name} · Pinkside`, LIMITS.footer) },
+        timestamp: request.created_at,
+      },
+    ],
+  }
 }
 
 async function discord(path: string, token: string, body: unknown): Promise<Response> {
@@ -88,7 +107,7 @@ Deno.serve(async (req) => {
     .in('id', (queued ?? []).map((row) => row.id))
     .eq('status', 'pending')
     .is('error', null)
-    .select('id, recipient:profiles(discord_id), request:urgent_requests(priority, title, body, author_name, status, item:items(name))')
+    .select('id, recipient:profiles(discord_id, accent), request:urgent_requests(priority, title, body, author_name, status, created_at, item:items(name))')
   if (error) return new Response('Error reservando la cola', { status: 500 })
 
   let sent = 0
@@ -97,7 +116,8 @@ Deno.serve(async (req) => {
   // ponytail: envío secuencial; si una ejecución muere a mitad, sus filas quedan con error 'enviando' (revisar a mano).
   for (const row of pending ?? []) {
     const request = row.request as RequestRow | null
-    const discordId = (row.recipient as { discord_id: string } | null)?.discord_id
+    const recipient = row.recipient as { discord_id: string; accent: string } | null
+    const discordId = recipient?.discord_id
     let outcome: Outcome = { status: 'failed', error: 'datos incompletos' }
 
     if (request && request.status !== 'open') {
@@ -111,7 +131,7 @@ Deno.serve(async (req) => {
         const { id } = (await channel.json()) as { id: string }
         // allowed_mentions vacío: un título con @everyone no debe mencionar a nadie.
         const message = await discord(`/channels/${id}/messages`, token, {
-          content: buildDm(request),
+          ...buildDm(request, recipient?.accent),
           allowed_mentions: { parse: [] },
         })
         if (message.status === 429) break

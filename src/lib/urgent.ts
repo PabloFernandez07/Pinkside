@@ -3,8 +3,10 @@ export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'skipped'
 
 export const PRIORITY_LABEL: Record<UrgentPriority, string> = { high: 'Alta', critical: 'Crítica' }
 
-/** Discord rechaza mensajes de más de 2.000 caracteres; dejamos margen. */
-export const MAX_DM_LENGTH = 1800
+/** Límites de un recuadro (embed) de Discord. */
+export const EMBED_LIMITS = { title: 256, description: 4096, field: 1024, footer: 2048 } as const
+
+const clip = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text)
 
 export interface DmInput {
   priority: UrgentPriority
@@ -14,17 +16,24 @@ export interface DmInput {
   itemName: string | null
 }
 
-/** Texto exacto del MD de Discord. Lo usan la vista previa del formulario y (copiado) el proceso que lo envía. */
-export function buildDm({ priority, title, body, authorName, itemName }: DmInput): string {
-  const lines = [
-    `${priority === 'critical' ? '🚨' : '⚠️'} **URGENTE · Prioridad ${PRIORITY_LABEL[priority].toLowerCase()}**`,
-    `**${title.trim()}**`,
-  ]
-  if (body?.trim()) lines.push(body.trim())
-  if (itemName) lines.push(`Item: ${itemName}`)
-  lines.push(`Pedido por ${authorName} · Pinkside`)
-  const text = lines.join('\n')
-  return text.length > MAX_DM_LENGTH ? `${text.slice(0, MAX_DM_LENGTH - 1)}…` : text
+/** Contenido del MD: una línea de texto (es lo que sale en la notificación) y un recuadro con color de acento. */
+export interface DmCard {
+  heading: string
+  title: string
+  description: string | null
+  fields: { name: string; value: string }[]
+  footer: string
+}
+
+/** Lo que ve el destinatario. Lo usan la vista previa del formulario y (copiado) la Edge Function que lo envía. */
+export function buildDm({ priority, title, body, authorName, itemName }: DmInput): DmCard {
+  return {
+    heading: `${priority === 'critical' ? '🚨' : '⚠️'} **URGENTE · Prioridad ${PRIORITY_LABEL[priority].toLowerCase()}**`,
+    title: clip(title.trim(), EMBED_LIMITS.title),
+    description: body?.trim() ? clip(body.trim(), EMBED_LIMITS.description) : null,
+    fields: itemName ? [{ name: 'Item', value: clip(itemName, EMBED_LIMITS.field) }] : [],
+    footer: clip(`Pedido por ${authorName} · Pinkside`, EMBED_LIMITS.footer),
+  }
 }
 
 export type DeliverySummary = Record<NotificationStatus, number>

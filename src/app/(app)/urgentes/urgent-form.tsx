@@ -129,7 +129,19 @@ export function UrgentForm({ recipients, items, authorName, initialTitle = '', i
 
       <div className="wide">
         <p className="hint">Vista previa del MD de Discord</p>
-        <pre className="dm-preview">{preview}</pre>
+        <p className="dm-heading">{preview.heading.replaceAll('**', '')}</p>
+        <div className="dm-embed">
+          <b>{preview.title}</b>
+          {preview.description && <p>{preview.description}</p>}
+          {preview.fields.map((field) => (
+            <p key={field.name}>
+              <b>{field.name}</b>
+              <br />
+              {field.value}
+            </p>
+          ))}
+          <small>{preview.footer}</small>
+        </div>
       </div>
       <div className="wide">
         <FormMessage state={state} />

@@ -1,37 +1,44 @@
 'use client'
 
 import { matchesSearch } from '@/lib/stock'
-import type { AreaData, MarkerData, Selection } from './map-types'
+import type { AreaData, IconData, MarkerData, Selection } from './map-types'
 
 interface MapLegendProps {
+  icons: IconData[]
   markers: MarkerData[]
   areas: AreaData[]
   query: string
   onQuery: (query: string) => void
   selection: Selection
   onSelect: (selection: NonNullable<Selection>) => void
+  /** Empieza a colocar marcas de un icono (solo quien puede editar). */
+  onPlace?: (iconId: number) => void
   showMarkers: boolean
   showAreas: boolean
   onShowMarkers: (value: boolean) => void
   onShowAreas: (value: boolean) => void
 }
 
-/** Leyenda del mapa: lista de iconos y zonas con su nota; un clic vuela hasta el elemento. */
+/** Leyenda del mapa: cada icono sale una vez (con cuántas marcas tiene); un clic vuela hasta él. */
 export function MapLegend({
+  icons,
   markers,
   areas,
   query,
   onQuery,
   selection,
   onSelect,
+  onPlace,
   showMarkers,
   showAreas,
   onShowMarkers,
   onShowAreas,
 }: MapLegendProps) {
-  const visibleMarkers = markers.filter((m) => matchesSearch({ name: `${m.title} ${m.note ?? ''}`, category: null }, query))
+  const visibleIcons = icons.filter((i) => matchesSearch({ name: `${i.title} ${i.note ?? ''}`, category: null }, query))
   const visibleAreas = areas.filter((a) => matchesSearch({ name: `${a.name} ${a.note ?? ''}`, category: null }, query))
-  const isOn = (type: 'marker' | 'area', id: number) => selection?.type === type && selection.id === id
+  const countOf = (iconId: number) => markers.filter((m) => m.iconId === iconId).length
+  const isOn = (type: 'icon' | 'area', id: number) => selection?.type === type && selection.id === id
+  const selectedMarkerIcon = selection?.type === 'marker' ? markers.find((m) => m.id === selection.id)?.iconId : undefined
 
   return (
     <div className="legend">
@@ -43,35 +50,53 @@ export function MapLegend({
         aria-label="Buscar en la leyenda"
       />
 
-      <section aria-labelledby="legend-markers">
+      <section aria-labelledby="legend-icons">
         <div className="legend-head">
-          <h3 id="legend-markers">Iconos ({visibleMarkers.length})</h3>
+          <h3 id="legend-icons">Iconos ({visibleIcons.length})</h3>
           <label className="check small">
             <input type="checkbox" checked={showMarkers} onChange={(event) => onShowMarkers(event.target.checked)} /> Mostrar
           </label>
         </div>
-        {visibleMarkers.length === 0 ? (
-          <p className="muted small">{markers.length === 0 ? 'Todavía no hay iconos.' : 'Nada coincide.'}</p>
+        {visibleIcons.length === 0 ? (
+          <p className="muted small">{icons.length === 0 ? 'Todavía no hay iconos.' : 'Nada coincide.'}</p>
         ) : (
           <ul>
-            {visibleMarkers.map((marker) => (
-              <li key={marker.id}>
-                <button
-                  type="button"
-                  className={`legend-item${isOn('marker', marker.id) ? ' on' : ''}`}
-                  aria-current={isOn('marker', marker.id) ? 'true' : undefined}
-                  onClick={() => onSelect({ type: 'marker', id: marker.id })}
-                >
-                  <span className="legend-emoji" aria-hidden="true">
-                    {marker.emoji}
-                  </span>
-                  <span className="legend-text">
-                    <b>{marker.title}</b>
-                    {marker.note && <small className="muted">{marker.note}</small>}
-                  </span>
-                </button>
-              </li>
-            ))}
+            {visibleIcons.map((icon) => {
+              const count = countOf(icon.id)
+              const on = isOn('icon', icon.id) || selectedMarkerIcon === icon.id
+              return (
+                <li key={icon.id} className="legend-row">
+                  <button
+                    type="button"
+                    className={`legend-item${on ? ' on' : ''}`}
+                    aria-current={on ? 'true' : undefined}
+                    onClick={() => onSelect({ type: 'icon', id: icon.id })}
+                  >
+                    <span className="legend-emoji" aria-hidden="true">
+                      {icon.emoji}
+                    </span>
+                    <span className="legend-text">
+                      <b>{icon.title}</b>
+                      {icon.note && <small className="muted">{icon.note}</small>}
+                    </span>
+                    <span className="legend-count" aria-label={`${count} ${count === 1 ? 'marca' : 'marcas'} en el mapa`}>
+                      ×{count}
+                    </span>
+                  </button>
+                  {onPlace && (
+                    <button
+                      type="button"
+                      className="legend-add"
+                      aria-label={`Colocar otro «${icon.title}»`}
+                      title="Colocar otro en el mapa"
+                      onClick={() => onPlace(icon.id)}
+                    >
+                      ＋
+                    </button>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>

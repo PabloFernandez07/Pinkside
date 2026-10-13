@@ -3,7 +3,7 @@ import { requireMember } from '@/lib/access'
 import { parsePoints } from '@/lib/map'
 import { createClient } from '@/lib/supabase/server'
 import { MapLoader } from './map-loader'
-import type { AreaData, MarkerData } from './map-types'
+import type { AreaData, IconData, MarkerData } from './map-types'
 
 export const metadata: Metadata = { title: 'Mapa' }
 
@@ -11,19 +11,25 @@ export default async function MapaPage() {
   const { profile, permissions } = await requireMember('active')
   const supabase = await createClient()
 
-  const [markersRes, areasRes] = await Promise.all([
-    supabase.from('map_markers').select('id, x, y, emoji, title, note, author_name').order('id'),
+  const [iconsRes, markersRes, areasRes] = await Promise.all([
+    supabase.from('map_icons').select('id, emoji, title, note, author_name').order('id'),
+    supabase.from('map_markers').select('id, icon_id, x, y, author_name').order('id'),
     supabase.from('map_areas').select('id, name, note, color, points, author_name').order('id'),
   ])
-  if (markersRes.error || areasRes.error) throw new Error('No se pudo cargar el mapa')
+  if (iconsRes.error || markersRes.error || areasRes.error) throw new Error('No se pudo cargar el mapa')
 
-  const markers: MarkerData[] = markersRes.data.map((row) => ({
+  const icons: IconData[] = iconsRes.data.map((row) => ({
     id: row.id,
-    x: row.x,
-    y: row.y,
     emoji: row.emoji,
     title: row.title,
     note: row.note,
+    authorName: row.author_name,
+  }))
+  const markers: MarkerData[] = markersRes.data.map((row) => ({
+    id: row.id,
+    iconId: row.icon_id,
+    x: row.x,
+    y: row.y,
     authorName: row.author_name,
   }))
   const areas: AreaData[] = areasRes.data
@@ -45,7 +51,7 @@ export default async function MapaPage() {
         <h1>Mapa</h1>
         <p>Iconos y zonas de la banda sobre el mapa de Los Santos</p>
       </div>
-      <MapLoader initialMarkers={markers} initialAreas={areas} canEdit={permissions.has('map.edit')} currentName={currentName} />
+      <MapLoader initialIcons={icons} initialMarkers={markers} initialAreas={areas} canEdit={permissions.has('map.edit')} currentName={currentName} />
     </div>
   )
 }

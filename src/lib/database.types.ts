@@ -344,7 +344,7 @@ export type Database = {
         Update: never
         Relationships: []
       }
-      map_markers: {
+      map_icons: {
         Row: {
           author_id: string | null
           author_name: string
@@ -353,6 +353,19 @@ export type Database = {
           id: number
           note: string | null
           title: string
+          updated_at: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      map_markers: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          created_at: string
+          icon_id: number
+          id: number
           updated_at: string
           x: number
           y: number
@@ -448,9 +461,14 @@ export type Database = {
         Returns: number
       }
       save_map_marker: {
-        Args: { p_emoji: string; p_id: number; p_note: string; p_title: string; p_x: number; p_y: number }
+        Args: { p_icon_id: number; p_id: number; p_x: number; p_y: number }
         Returns: number
       }
+      save_map_icon: {
+        Args: { p_emoji: string; p_id: number; p_note: string; p_title: string }
+        Returns: number
+      }
+      delete_map_icon: { Args: { p_id: number }; Returns: undefined }
       get_disabled_sections: { Args: Record<PropertyKey, never>; Returns: string[] }
       set_section_disabled: {
         Args: { p_disabled: boolean; p_section: string }

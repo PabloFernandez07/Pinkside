@@ -1,7 +1,7 @@
 'use client'
 
 import { DEFAULT_EMOJI, EMOJI_PRESETS, MAP_COLORS, isSingleEmoji } from '@/lib/map'
-import type { AreaDraft, MarkerDraft } from './map-types'
+import type { AreaDraft, IconDraft } from './map-types'
 
 interface FormShellProps {
   title: string
@@ -49,29 +49,33 @@ function FormShell({ title, error, pending, saveLabel, onSave, onCancel, onDelet
   )
 }
 
-interface MarkerFormProps {
-  draft: MarkerDraft
+interface IconFormProps {
+  draft: IconDraft
   error: string | null
   pending: boolean
-  onChange: (draft: MarkerDraft) => void
+  onChange: (draft: IconDraft) => void
   onSave: () => void
   onCancel: () => void
   onDelete?: () => void
 }
 
-export function MarkerForm({ draft, error, pending, onChange, onSave, onCancel, onDelete }: MarkerFormProps) {
+export function IconForm({ draft, error, pending, onChange, onSave, onCancel, onDelete }: IconFormProps) {
   const emojiOk = isSingleEmoji(draft.emoji)
   return (
     <FormShell
       title={draft.id === null ? 'Nuevo icono' : 'Editar icono'}
       error={error}
       pending={pending}
-      saveLabel="Guardar icono"
+      saveLabel={draft.id === null ? 'Guardar y colocar' : 'Guardar icono'}
       onSave={onSave}
       onCancel={onCancel}
       onDelete={onDelete}
     >
-      <p className="muted small">Arrastra el icono por el mapa para colocarlo con precisión.</p>
+      <p className="muted small">
+        {draft.id === null
+          ? 'Al guardarlo podrás colocarlo en el mapa tantas veces como quieras.'
+          : 'Los cambios se aplican a todas las marcas de este icono.'}
+      </p>
       <div className="field">
         <span className="label-like" id="map-emoji-label">
           Emoji
@@ -103,9 +107,9 @@ export function MarkerForm({ draft, error, pending, onChange, onSave, onCancel, 
         {!emojiOk && <span className="err">Escribe o elige un solo emoji</span>}
       </div>
       <div className="field">
-        <label htmlFor="map-marker-title">Título</label>
+        <label htmlFor="map-icon-title">Título</label>
         <input
-          id="map-marker-title"
+          id="map-icon-title"
           type="text"
           value={draft.title}
           onChange={(event) => onChange({ ...draft, title: event.target.value })}
@@ -116,9 +120,9 @@ export function MarkerForm({ draft, error, pending, onChange, onSave, onCancel, 
         />
       </div>
       <div className="field">
-        <label htmlFor="map-marker-note">Nota (opcional)</label>
+        <label htmlFor="map-icon-note">Nota (opcional)</label>
         <textarea
-          id="map-marker-note"
+          id="map-icon-note"
           rows={3}
           value={draft.note}
           onChange={(event) => onChange({ ...draft, note: event.target.value })}

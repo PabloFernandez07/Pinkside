@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/lib/access'
 import { createClient } from '@/lib/supabase/server'
-import { deleteMapItemSchema, fieldErrors, saveAreaSchema, saveMarkerSchema } from '@/lib/validation'
+import { deleteMapItemSchema, fieldErrors, saveAreaSchema, saveIconSchema, saveMarkerSchema } from '@/lib/validation'
 
 export type MapActionResult =
   | { ok: true; id: number }
@@ -22,7 +22,41 @@ function friendly(error: { code?: string }): MapActionResult {
   }
 }
 
-/** Crea o mueve/edita un icono. El permiso (`map.edit`) lo vuelve a comprobar la base de datos. */
+/** Crea o edita un icono (emoji, título y nota). Editarlo cambia todas sus marcas. */
+export async function saveIcon(input: unknown): Promise<MapActionResult> {
+  await requirePermission('map.edit')
+  const parsed = saveIconSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) }
+  const icon = parsed.data
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('save_map_icon', {
+    p_id: icon.iconId as number, // los tipos generados no admiten null en RPC aunque la función sí
+    p_emoji: icon.emoji,
+    p_title: icon.title,
+    p_note: icon.note as string,
+  })
+  if (error) return friendly(error)
+
+  revalidatePath('/mapa')
+  return { ok: true, id: data }
+}
+
+/** Borra un icono y, con él, todas sus marcas. */
+export async function deleteIcon(input: unknown): Promise<MapActionResult> {
+  await requirePermission('map.edit')
+  const parsed = deleteMapItemSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, message: 'Icono no válido.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('delete_map_icon', { p_id: parsed.data.id })
+  if (error) return friendly(error)
+
+  revalidatePath('/mapa')
+  return { ok: true, id: parsed.data.id }
+}
+
+/** Coloca una marca de un icono en el mapa, o la mueve. */
 export async function saveMarker(input: unknown): Promise<MapActionResult> {
   await requirePermission('map.edit')
   const parsed = saveMarkerSchema.safeParse(input)
@@ -31,12 +65,10 @@ export async function saveMarker(input: unknown): Promise<MapActionResult> {
 
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('save_map_marker', {
-    p_id: marker.markerId as number, // los tipos generados no admiten null en RPC aunque la función sí
+    p_id: marker.markerId as number,
+    p_icon_id: marker.iconId,
     p_x: marker.x,
     p_y: marker.y,
-    p_emoji: marker.emoji,
-    p_title: marker.title,
-    p_note: marker.note as string,
   })
   if (error) return friendly(error)
 
@@ -47,7 +79,7 @@ export async function saveMarker(input: unknown): Promise<MapActionResult> {
 export async function deleteMarker(input: unknown): Promise<MapActionResult> {
   await requirePermission('map.edit')
   const parsed = deleteMapItemSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, message: 'Icono no válido.' }
+  if (!parsed.success) return { ok: false, message: 'Marca no válida.' }
 
   const supabase = await createClient()
   const { error } = await supabase.rpc('delete_map_marker', { p_id: parsed.data.id })

@@ -14,5 +14,6 @@ const MapView = dynamic(() => import('./map-view'), {
 })
 
 export function MapLoader(props: MapViewProps) {
+  // Los iconos, marcas y zonas llegan del servidor ya listos; el mapa los lleva en su propio estado.
   return <MapView {...props} />
 }

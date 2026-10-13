@@ -74,8 +74,9 @@ Reglas de diseño que conviene mantener:
   No uses `P0004` (es `assert_failure` y `WHEN OTHERS` no lo captura).
 - **Mapa (`/mapa`):** Leaflet con teselas de GTA V (satélite y atlas, zoom 0 a 5) en `public/mapa/`, tomadas de
   [VIRUXE/gtav-map-tiles](https://github.com/VIRUXE/gtav-map-tiles) (sin licencia declarada; el mapa es arte de Rockstar
-  Games y el uso es privado). Iconos con emoji y nota, y zonas dibujadas con puntos, guardados como proporción 0 a 1
-  del mapa. Los ve todo miembro; crear, mover y borrar exige `map.edit` (por defecto nivel 50+, que la base de datos
+  Games y el uso es privado). Un icono (emoji, título y nota) se define una vez y se puede colocar tantas veces como
+  se quiera (la leyenda lo muestra una vez con su contador); las zonas se dibujan con puntos. Las posiciones se guardan
+  como proporción 0 a 1 del mapa. Los ve todo miembro; crear, mover y borrar exige `map.edit` (por defecto nivel 50+, que la base de datos
   vuelve a comprobar). No hay teselas reales por encima del zoom 5: más allá se amplía la última.
 - **Secciones desactivables:** Inventario y Recetas se pueden ocultar desde Administración → Secciones
   (`roles.manage`, ajuste `disabled_sections`): desaparecen del menú y sus páginas redirigen al resumen. Los datos no se tocan.

@@ -2,8 +2,16 @@
 
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
-import { useEffect, useRef, useState, useTransition } from 'react'
-import { deleteArea, deleteMarker, saveArea, saveMarker, type MapActionResult } from '@/app/actions/map'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import {
+  deleteArea,
+  deleteIcon,
+  deleteMarker,
+  saveArea,
+  saveIcon,
+  saveMarker,
+  type MapActionResult,
+} from '@/app/actions/map'
 import {
   DEFAULT_AREA_COLOR,
   DEFAULT_EMOJI,
@@ -17,31 +25,30 @@ import {
   type Point,
   type TileStyle,
 } from '@/lib/map'
-import { AreaForm, MarkerForm } from './map-forms'
+import { AreaForm, IconForm } from './map-forms'
 import { MapLegend } from './map-legend'
-import type { AreaData, AreaDraft, MapViewProps, MarkerData, MarkerDraft, Selection } from './map-types'
+import type { AreaData, AreaDraft, IconData, IconDraft, MapViewProps, MarkerData, Selection } from './map-types'
 
 type Mode = 'idle' | 'placing' | 'drawing'
-
-const WORLD_BOUNDS = L.latLngBounds([-WORLD, 0], [0, WORLD])
-const MAX_VIEW_ZOOM = MAX_ZOOM + 2 // Más allá del zoom 5 no hay teselas nuevas: se amplía la última.
-const MAX_AREA_POINTS = 60
 
 interface MapApi {
   select(selection: NonNullable<Selection>): void
   moveMarker(id: number, at: L.LatLng): void
   clickMap(at: L.LatLng): void
-  dragDraft(at: L.LatLng): void
 }
 
 const noop = () => {}
 
+const WORLD_BOUNDS = L.latLngBounds([-WORLD, 0], [0, WORLD])
+const MAX_VIEW_ZOOM = MAX_ZOOM + 2 // Más allá del zoom 5 no hay teselas nuevas: se amplía la última.
+const MAX_AREA_POINTS = 60
+
 const latLngs = (points: readonly Point[]): [number, number][] => points.map(([x, y]) => toLatLng(x, y))
 
 /** Icono redondo con el emoji. El emoji se inserta como texto (nunca como HTML). */
-function pinIcon(emoji: string, state: 'normal' | 'selected' | 'draft'): L.DivIcon {
+function pinIcon(emoji: string, selected: boolean): L.DivIcon {
   const pin = document.createElement('div')
-  pin.className = `map-pin ${state}`
+  pin.className = `map-pin ${selected ? 'selected' : 'normal'}`
   const glyph = document.createElement('span')
   glyph.textContent = emoji
   pin.append(glyph)
@@ -51,13 +58,15 @@ function pinIcon(emoji: string, state: 'normal' | 'selected' | 'draft'): L.DivIc
 const firstError = (result: Extract<MapActionResult, { ok: false }>): string =>
   result.message ?? Object.values(result.errors ?? {}).flat().find(Boolean) ?? 'No se pudo guardar.'
 
-export default function MapView({ initialMarkers, initialAreas, canEdit, currentName }: MapViewProps) {
+export default function MapView({ initialIcons, initialMarkers, initialAreas, canEdit, currentName }: MapViewProps) {
+  const [icons, setIcons] = useState<IconData[]>(initialIcons)
   const [markers, setMarkers] = useState<MarkerData[]>(initialMarkers)
   const [areas, setAreas] = useState<AreaData[]>(initialAreas)
   const [style, setStyle] = useState<TileStyle>('satelite')
   const [mode, setMode] = useState<Mode>('idle')
+  const [placingIconId, setPlacingIconId] = useState<number | null>(null)
   const [draftPoints, setDraftPoints] = useState<Point[]>([])
-  const [markerDraft, setMarkerDraft] = useState<MarkerDraft | null>(null)
+  const [iconDraft, setIconDraft] = useState<IconDraft | null>(null)
   const [areaDraft, setAreaDraft] = useState<AreaDraft | null>(null)
   const [selection, setSelection] = useState<Selection>(null)
   const [confirming, setConfirming] = useState(false)
@@ -72,16 +81,20 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
   const markerGroup = useRef<L.LayerGroup | null>(null)
   const areaGroup = useRef<L.LayerGroup | null>(null)
   const draftGroup = useRef<L.LayerGroup | null>(null)
+  // Recuerda por qué marca de un icono se va al pulsarlo varias veces en la leyenda.
+  const cycle = useRef({ iconId: -1, index: -1 })
   // Los manejadores de Leaflet se registran una sola vez: siempre llaman a la versión más reciente de estas funciones.
-  const api = useRef<MapApi>({ select: noop, moveMarker: noop, clickMap: noop, dragDraft: noop })
+  const api = useRef<MapApi>({ select: noop, moveMarker: noop, clickMap: noop })
 
+  const iconsById = useMemo(() => new Map(icons.map((icon) => [icon.id, icon])), [icons])
+  const selectedIcon = selection?.type === 'icon' ? iconsById.get(selection.id) : undefined
   const selectedMarker = selection?.type === 'marker' ? markers.find((m) => m.id === selection.id) : undefined
+  const markerIcon = selectedMarker ? iconsById.get(selectedMarker.iconId) : undefined
   const selectedArea = selection?.type === 'area' ? areas.find((a) => a.id === selection.id) : undefined
-  const editing = markerDraft !== null || areaDraft !== null
-  const markerDraftId = markerDraft?.id ?? null
-  const draftX = markerDraft?.x ?? null
-  const draftY = markerDraft?.y ?? null
-  const draftEmoji = markerDraft?.emoji ?? null
+  const placingIcon = placingIconId === null ? undefined : iconsById.get(placingIconId)
+  const editing = iconDraft !== null || areaDraft !== null
+  const detailIcon = selectedIcon ?? markerIcon
+  const pinsOfDetailIcon = detailIcon ? markers.filter((m) => m.iconId === detailIcon.id).length : 0
 
   // --- Mapa, teselas y capas ---
   useEffect(() => {
@@ -132,20 +145,24 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     group.clearLayers()
     if (!showMarkers) return
     for (const marker of markers) {
-      if (marker.id === markerDraftId) continue // mientras se edita, lo representa el icono del borrador
-      const isSelected = selection?.type === 'marker' && selection.id === marker.id
+      const icon = iconsById.get(marker.iconId)
+      if (!icon) continue
+      // Al seleccionar un icono se resaltan todas sus marcas.
+      const isSelected =
+        (selection?.type === 'marker' && selection.id === marker.id) ||
+        (selection?.type === 'icon' && selection.id === marker.iconId)
       L.marker(toLatLng(marker.x, marker.y), {
-        icon: pinIcon(marker.emoji, isSelected ? 'selected' : 'normal'),
+        icon: pinIcon(icon.emoji, isSelected),
         draggable: canEdit && mode === 'idle',
         interactive: mode === 'idle',
-        title: marker.title,
+        title: icon.title,
         riseOnHover: true,
       })
         .on('click', () => api.current.select({ type: 'marker', id: marker.id }))
         .on('dragend', (event) => api.current.moveMarker(marker.id, (event.target as L.Marker).getLatLng()))
         .addTo(group)
     }
-  }, [markers, showMarkers, selection, canEdit, mode, markerDraftId])
+  }, [markers, iconsById, showMarkers, selection, canEdit, mode])
 
   useEffect(() => {
     const group = areaGroup.current
@@ -167,7 +184,7 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     }
   }, [areas, showAreas, selection, mode])
 
-  // Borrador: puntos que se están marcando, zona recién dibujada e icono que se está colocando o editando.
+  // Borrador: puntos que se están marcando o zona recién dibujada que aún no se ha guardado.
   useEffect(() => {
     const group = draftGroup.current
     if (!group) return
@@ -184,12 +201,7 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
         L.circleMarker(toLatLng(x, y), { radius: 5, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1, interactive: false }).addTo(group)
       }
     }
-    if (draftX !== null && draftY !== null && draftEmoji !== null) {
-      L.marker(toLatLng(draftX, draftY), { icon: pinIcon(draftEmoji || DEFAULT_EMOJI, 'draft'), draggable: true })
-        .on('dragend', (event) => api.current.dragDraft((event.target as L.Marker).getLatLng()))
-        .addTo(group)
-    }
-  }, [mode, draftPoints, areaDraft, draftX, draftY, draftEmoji])
+  }, [mode, draftPoints, areaDraft])
 
   useEffect(() => {
     containerRef.current?.classList.toggle('map-crosshair', mode !== 'idle')
@@ -200,6 +212,7 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMode('idle')
+        setPlacingIconId(null)
         setDraftPoints([])
       }
     }
@@ -211,13 +224,17 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
   const flyTo = (target: NonNullable<Selection>) => {
     const map = mapRef.current
     if (!map) return
-    if (target.type === 'marker') {
-      const marker = markers.find((m) => m.id === target.id)
-      if (marker) map.flyTo(toLatLng(marker.x, marker.y), Math.max(map.getZoom(), 4))
-    } else {
+    if (target.type === 'area') {
       const area = areas.find((a) => a.id === target.id)
       if (area) map.flyToBounds(L.latLngBounds(latLngs(area.points)), { maxZoom: 5, padding: [40, 40] })
+      return
     }
+    // Un icono tiene varias marcas: cada pulsación en la leyenda va a la siguiente.
+    const pins = target.type === 'icon' ? markers.filter((m) => m.iconId === target.id) : markers.filter((m) => m.id === target.id)
+    if (pins.length === 0) return
+    const index = target.type === 'icon' && cycle.current.iconId === target.id ? (cycle.current.index + 1) % pins.length : 0
+    if (target.type === 'icon') cycle.current = { iconId: target.id, index }
+    map.flyTo(toLatLng(pins[index].x, pins[index].y), Math.max(map.getZoom(), 4))
   }
 
   /** `fly`: desde la leyenda se vuela hasta el elemento; al pulsarlo en el mapa no se mueve la vista. */
@@ -225,7 +242,7 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     setSelection(target)
     setConfirming(false)
     setError(null)
-    setMarkerDraft(null)
+    setIconDraft(null)
     setAreaDraft(null)
     if (fly) flyTo(target)
   }
@@ -237,7 +254,7 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     const previous = markers
     setMarkers((current) => current.map((m) => (m.id === id ? { ...m, x, y } : m)))
     startTransition(async () => {
-      const result = await saveMarker({ markerId: id, x, y, emoji: marker.emoji, title: marker.title, note: marker.note })
+      const result = await saveMarker({ markerId: id, iconId: marker.iconId, x, y })
       if (!result.ok) {
         setMarkers(previous) // se deshace el movimiento si el servidor lo rechaza
         setError(firstError(result))
@@ -245,12 +262,20 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     })
   }
 
+  /** Coloca otra marca del icono y sigue en modo colocación para poner todas las que hagan falta. */
+  const placeMarker = (iconId: number, x: number, y: number) => {
+    setError(null)
+    startTransition(async () => {
+      const result = await saveMarker({ markerId: null, iconId, x, y })
+      if (!result.ok) return setError(firstError(result))
+      setMarkers((current) => [...current, { id: result.id, iconId, x, y, authorName: currentName }])
+    })
+  }
+
   const clickMap = (at: L.LatLng) => {
     const { x, y } = fromLatLng(at.lat, at.lng)
-    if (mode === 'placing') {
-      setMarkerDraft({ id: null, x, y, emoji: DEFAULT_EMOJI, title: '', note: '' })
-      setMode('idle')
-      setSelection(null)
+    if (mode === 'placing' && placingIconId !== null) {
+      placeMarker(placingIconId, x, y)
     } else if (mode === 'drawing') {
       setDraftPoints((points) => (points.length >= MAX_AREA_POINTS ? points : [...points, [x, y]]))
     } else {
@@ -259,30 +284,37 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     }
   }
 
-  const dragDraft = (at: L.LatLng) => {
-    const { x, y } = fromLatLng(at.lat, at.lng)
-    setMarkerDraft((draft) => (draft ? { ...draft, x, y } : draft))
-  }
-
   useEffect(() => {
-    api.current = { select: (target) => select(target, false), moveMarker, clickMap, dragDraft }
+    api.current = { select: (target) => select(target, false), moveMarker, clickMap }
   })
 
-  const startPlacing = () => {
-    setMode('placing')
-    setMarkerDraft(null)
+  const resetTools = () => {
+    setMode('idle')
+    setPlacingIconId(null)
+    setDraftPoints([])
+    setIconDraft(null)
     setAreaDraft(null)
-    setSelection(null)
     setError(null)
+  }
+
+  const startPlacing = (iconId: number) => {
+    resetTools()
+    setMode('placing')
+    setPlacingIconId(iconId)
+    setSelection({ type: 'icon', id: iconId })
+    setConfirming(false)
+  }
+
+  const startNewIcon = () => {
+    resetTools()
+    setSelection(null)
+    setIconDraft({ id: null, emoji: DEFAULT_EMOJI, title: '', note: '' })
   }
 
   const startDrawing = () => {
+    resetTools()
     setMode('drawing')
-    setDraftPoints([])
-    setMarkerDraft(null)
-    setAreaDraft(null)
     setSelection(null)
-    setError(null)
   }
 
   const finishDrawing = () => {
@@ -292,34 +324,26 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     setMode('idle')
   }
 
-  const cancelAll = () => {
-    setMode('idle')
-    setDraftPoints([])
-    setMarkerDraft(null)
-    setAreaDraft(null)
-    setError(null)
-  }
-
-  const submitMarker = () => {
-    if (!markerDraft) return
-    const draft = markerDraft
+  const submitIcon = () => {
+    if (!iconDraft) return
+    const draft = iconDraft
     setError(null)
     startTransition(async () => {
-      const result = await saveMarker({ markerId: draft.id, x: draft.x, y: draft.y, emoji: draft.emoji, title: draft.title, note: draft.note })
+      const result = await saveIcon({ iconId: draft.id, emoji: draft.emoji, title: draft.title, note: draft.note })
       if (!result.ok) return setError(firstError(result))
-      const previous = markers.find((m) => m.id === result.id)
-      const saved: MarkerData = {
+      const previous = icons.find((i) => i.id === result.id)
+      const saved: IconData = {
         id: result.id,
-        x: draft.x,
-        y: draft.y,
         emoji: draft.emoji.trim(),
         title: draft.title.trim(),
         note: draft.note.trim() || null,
         authorName: previous?.authorName ?? currentName,
       }
-      setMarkers((current) => (previous ? current.map((m) => (m.id === saved.id ? saved : m)) : [...current, saved]))
-      setMarkerDraft(null)
-      setSelection({ type: 'marker', id: saved.id })
+      setIcons((current) => (previous ? current.map((i) => (i.id === saved.id ? saved : i)) : [...current, saved]))
+      setIconDraft(null)
+      // Un icono nuevo se coloca enseguida; uno editado solo se queda seleccionado.
+      if (previous) setSelection({ type: 'icon', id: saved.id })
+      else startPlacing(saved.id)
     })
   }
 
@@ -351,30 +375,31 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
     })
   }
 
-  const remove = (target: NonNullable<Selection>) => {
+  /** Borra lo seleccionado: una marca, un icono (con todas sus marcas) o una zona. */
+  const removeSelected = () => {
+    if (!selection) return
+    const target = selection
     setError(null)
     startTransition(async () => {
-      const result = await (target.type === 'marker' ? deleteMarker({ id: target.id }) : deleteArea({ id: target.id }))
+      const result = await (target.type === 'marker'
+        ? deleteMarker({ id: target.id })
+        : target.type === 'icon'
+          ? deleteIcon({ id: target.id })
+          : deleteArea({ id: target.id }))
       if (!result.ok) return setError(firstError(result))
       if (target.type === 'marker') setMarkers((current) => current.filter((m) => m.id !== target.id))
-      else setAreas((current) => current.filter((a) => a.id !== target.id))
-      setMarkerDraft(null)
-      setAreaDraft(null)
+      else if (target.type === 'icon') {
+        setIcons((current) => current.filter((i) => i.id !== target.id))
+        setMarkers((current) => current.filter((m) => m.iconId !== target.id))
+      } else setAreas((current) => current.filter((a) => a.id !== target.id))
       setSelection(null)
       setConfirming(false)
     })
   }
 
   const startEditing = () => {
-    if (selectedMarker) {
-      setMarkerDraft({
-        id: selectedMarker.id,
-        x: selectedMarker.x,
-        y: selectedMarker.y,
-        emoji: selectedMarker.emoji,
-        title: selectedMarker.title,
-        note: selectedMarker.note ?? '',
-      })
+    if (detailIcon) {
+      setIconDraft({ id: detailIcon.id, emoji: detailIcon.emoji, title: detailIcon.title, note: detailIcon.note ?? '' })
     } else if (selectedArea) {
       setAreaDraft({
         id: selectedArea.id,
@@ -387,11 +412,18 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
   }
 
   const hint =
-    mode === 'placing'
-      ? 'Haz clic en el mapa para colocar el icono (Esc para cancelar)'
+    mode === 'placing' && placingIcon
+      ? `Haz clic en el mapa para colocar «${placingIcon.title}». Puedes poner todos los que quieras (Esc para terminar)`
       : mode === 'drawing'
         ? `Haz clic para marcar los vértices de la zona: ${draftPoints.length} (mínimo 3). Esc para cancelar`
         : null
+
+  const detailTitle = detailIcon ? `${detailIcon.emoji} ${detailIcon.title}` : selectedArea?.name
+  const detailNote = detailIcon ? detailIcon.note : selectedArea?.note
+  const deleteWarning =
+    selection?.type === 'icon' && pinsOfDetailIcon > 0
+      ? `Se borrará el icono y sus ${pinsOfDetailIcon} ${pinsOfDetailIcon === 1 ? 'marca' : 'marcas'}. ¿Seguro?`
+      : '¿Borrar de verdad?'
 
   return (
     <div className="grid g-map">
@@ -426,12 +458,28 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
         <div className="scroll scroll-top">
           {canEdit && (
             <div className="map-tools">
-              <button type="button" className="btn sm" onClick={startPlacing} disabled={mode === 'placing' || editing}>
-                ＋ Añadir icono
+              <button type="button" className="btn sm" onClick={startNewIcon} disabled={mode !== 'idle' || editing}>
+                ＋ Nuevo icono
               </button>
-              <button type="button" className="btn sm ghost" onClick={startDrawing} disabled={mode === 'drawing' || editing}>
+              <button type="button" className="btn sm ghost" onClick={startDrawing} disabled={mode !== 'idle' || editing}>
                 ⬠ Dibujar zona
               </button>
+            </div>
+          )}
+
+          {mode === 'placing' && placingIcon && (
+            <div className="map-form">
+              <h3>
+                Colocando {placingIcon.emoji} {placingIcon.title}
+              </h3>
+              <p className="muted small">
+                Cada clic en el mapa pone una marca nueva. Ahora hay {markers.filter((m) => m.iconId === placingIcon.id).length}.
+              </p>
+              <div className="actions">
+                <button type="button" className="btn sm" onClick={resetTools}>
+                  Terminar
+                </button>
+              </div>
             </div>
           )}
 
@@ -446,55 +494,50 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
                 <button type="button" className="btn sm ghost" onClick={() => setDraftPoints((points) => points.slice(0, -1))} disabled={draftPoints.length === 0}>
                   Deshacer punto
                 </button>
-                <button type="button" className="btn sm ghost" onClick={cancelAll}>
+                <button type="button" className="btn sm ghost" onClick={resetTools}>
                   Cancelar
                 </button>
               </div>
             </div>
           )}
 
-          {markerDraft && (
-            <MarkerForm
-              draft={markerDraft}
-              error={error}
-              pending={pending}
-              onChange={setMarkerDraft}
-              onSave={submitMarker}
-              onCancel={cancelAll}
-              onDelete={markerDraft.id === null ? undefined : () => remove({ type: 'marker', id: markerDraft.id as number })}
-            />
+          {iconDraft && (
+            <IconForm draft={iconDraft} error={error} pending={pending} onChange={setIconDraft} onSave={submitIcon} onCancel={resetTools} />
           )}
           {areaDraft && (
-            <AreaForm
-              draft={areaDraft}
-              error={error}
-              pending={pending}
-              onChange={setAreaDraft}
-              onSave={submitArea}
-              onCancel={cancelAll}
-              onDelete={areaDraft.id === null ? undefined : () => remove({ type: 'area', id: areaDraft.id as number })}
-            />
+            <AreaForm draft={areaDraft} error={error} pending={pending} onChange={setAreaDraft} onSave={submitArea} onCancel={resetTools} />
           )}
 
-          {!editing && (selectedMarker || selectedArea) && (
+          {!editing && mode === 'idle' && (detailIcon || selectedArea) && (
             <div className="map-detail">
-              <h3>{selectedMarker ? `${selectedMarker.emoji} ${selectedMarker.title}` : selectedArea?.name}</h3>
-              {(selectedMarker?.note ?? selectedArea?.note) && <p className="map-note">{selectedMarker?.note ?? selectedArea?.note}</p>}
-              <p className="muted small">Añadido por {selectedMarker?.authorName ?? selectedArea?.authorName}</p>
+              <h3>{detailTitle}</h3>
+              {detailNote && <p className="map-note">{detailNote}</p>}
+              {detailIcon && (
+                <p className="muted small">
+                  {pinsOfDetailIcon} {pinsOfDetailIcon === 1 ? 'marca' : 'marcas'} en el mapa
+                  {selectedMarker ? ` · esta la puso ${selectedMarker.authorName}` : ` · creado por ${detailIcon.authorName}`}
+                </p>
+              )}
+              {selectedArea && <p className="muted small">Añadida por {selectedArea.authorName}</p>}
               {canEdit && !confirming && (
                 <div className="actions">
+                  {detailIcon && (
+                    <button type="button" className="btn sm" onClick={() => startPlacing(detailIcon.id)}>
+                      Colocar otro
+                    </button>
+                  )}
                   <button type="button" className="btn sm ghost" onClick={startEditing}>
-                    Editar
+                    {detailIcon ? 'Editar icono' : 'Editar'}
                   </button>
                   <button type="button" className="btn sm ghost danger" onClick={() => setConfirming(true)}>
-                    Borrar
+                    {selectedMarker ? 'Borrar esta marca' : detailIcon ? 'Borrar icono' : 'Borrar'}
                   </button>
                 </div>
               )}
-              {canEdit && confirming && selection && (
+              {canEdit && confirming && (
                 <div className="actions" role="alert">
-                  <span className="small">¿Borrar de verdad?</span>
-                  <button type="button" className="btn sm ghost danger" onClick={() => remove(selection)} aria-disabled={pending}>
+                  <span className="small">{selectedMarker ? '¿Borrar esta marca?' : deleteWarning}</span>
+                  <button type="button" className="btn sm ghost danger" onClick={removeSelected} aria-disabled={pending}>
                     Sí, borrar
                   </button>
                   <button type="button" className="btn sm ghost" onClick={() => setConfirming(false)}>
@@ -512,12 +555,14 @@ export default function MapView({ initialMarkers, initialAreas, canEdit, current
           )}
 
           <MapLegend
+            icons={icons}
             markers={markers}
             areas={areas}
             query={query}
             onQuery={setQuery}
             selection={selection}
             onSelect={(target) => select(target, true)}
+            onPlace={canEdit ? startPlacing : undefined}
             showMarkers={showMarkers}
             showAreas={showAreas}
             onShowMarkers={setShowMarkers}

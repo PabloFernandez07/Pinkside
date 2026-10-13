@@ -25,6 +25,7 @@ import {
   urgentRequestSchema,
   addAllowedIdSchema,
   removeAllowedIdSchema,
+  saveIconSchema,
   saveMarkerSchema,
   saveAreaSchema,
   deleteMapItemSchema,
@@ -498,38 +499,50 @@ describe('esquemas de la lista de acceso', () => {
 })
 
 describe('esquemas del mapa', () => {
-  const marker = { markerId: '', x: '0.25', y: 0.5, emoji: ' 🔫 ', title: '  NPC armas ', note: '  Vende de noche ' }
+  const icon = { iconId: '', emoji: ' 🔫 ', title: '  NPC armas ', note: '  Vende de noche ' }
 
   it('acepta un icono y normaliza los campos', () => {
-    const result = saveMarkerSchema.safeParse(marker)
-    expect(result.success && result.data).toEqual({
-      markerId: null,
-      x: 0.25,
-      y: 0.5,
-      emoji: '🔫',
-      title: 'NPC armas',
-      note: 'Vende de noche',
-    })
+    const result = saveIconSchema.safeParse(icon)
+    expect(result.success && result.data).toEqual({ iconId: null, emoji: '🔫', title: 'NPC armas', note: 'Vende de noche' })
   })
 
   it('al editar acepta el id y una nota vacía o ausente pasa a null', () => {
-    expect(saveMarkerSchema.safeParse({ ...marker, markerId: '7' }).data?.markerId).toBe(7)
-    expect(saveMarkerSchema.safeParse({ ...marker, note: '' }).data?.note).toBeNull()
-    expect(saveMarkerSchema.safeParse({ ...marker, note: null }).data?.note).toBeNull()
+    expect(saveIconSchema.safeParse({ ...icon, iconId: '7' }).data?.iconId).toBe(7)
+    expect(saveIconSchema.safeParse({ ...icon, note: '' }).data?.note).toBeNull()
+    expect(saveIconSchema.safeParse({ ...icon, note: null }).data?.note).toBeNull()
   })
 
   it.each([
-    ['fuera del mapa (x)', { x: 1.2 }],
-    ['fuera del mapa (y)', { y: -0.1 }],
-    ['posición no numérica', { x: 'a' }],
     ['sin emoji', { emoji: '' }],
     ['texto en vez de emoji', { emoji: 'hola' }],
     ['dos emojis', { emoji: '🔫🔫' }],
     ['sin título', { title: '   ' }],
     ['título largo', { title: 'x'.repeat(61) }],
     ['nota larga', { note: 'x'.repeat(501) }],
-    ['id inválido', { markerId: '0' }],
+    ['id inválido', { iconId: '0' }],
   ])('rechaza un icono %s', (_name, override) => {
+    expect(saveIconSchema.safeParse({ ...icon, ...override }).success).toBe(false)
+  })
+
+  const marker = { markerId: '', iconId: '3', x: '0.25', y: 0.5 }
+
+  it('acepta una marca de un icono', () => {
+    const result = saveMarkerSchema.safeParse(marker)
+    expect(result.success && result.data).toEqual({ markerId: null, iconId: 3, x: 0.25, y: 0.5 })
+  })
+
+  it('al mover una marca acepta su id', () => {
+    expect(saveMarkerSchema.safeParse({ ...marker, markerId: '9' }).data?.markerId).toBe(9)
+  })
+
+  it.each([
+    ['fuera del mapa (x)', { x: 1.2 }],
+    ['fuera del mapa (y)', { y: -0.1 }],
+    ['posición no numérica', { x: 'a' }],
+    ['sin icono', { iconId: '' }],
+    ['icono inválido', { iconId: '0' }],
+    ['marca inválida', { markerId: '0' }],
+  ])('rechaza una marca %s', (_name, override) => {
     expect(saveMarkerSchema.safeParse({ ...marker, ...override }).success).toBe(false)
   })
 

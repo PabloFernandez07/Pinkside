@@ -374,6 +374,11 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 .legend section { display: grid; gap: 0.4rem; }
 .legend-head { display: flex; justify-content: space-between; align-items: center; }
 .legend ul { list-style: none; display: grid; gap: 0.25rem; }
+.legend-row { display: flex; gap: 0.3rem; align-items: stretch; }
+.legend-row .legend-item { flex: 1; min-width: 0; }
+.legend-count { flex: none; margin-left: auto; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: color-mix(in oklch, var(--accent) 18%, var(--surface)); color: var(--text); }
+.legend-add { flex: none; width: 2.2rem; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); color: var(--accent-fg); font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+.legend-add:hover { border-color: var(--accent); }
 .legend-item { width: 100%; display: flex; gap: 0.7rem; align-items: center; text-align: left; padding: 0.45rem 0.6rem; border: 1px solid transparent; border-radius: var(--radius-s); background: var(--surface-2); color: var(--text); cursor: pointer; font: inherit; }
 .legend-item:hover { border-color: var(--line); }
 .legend-item.on { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 12%, var(--surface)); }

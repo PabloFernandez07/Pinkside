@@ -1,12 +1,20 @@
 import type { Point } from '@/lib/map'
 
-export interface MarkerData {
+/** Un icono se define una vez (emoji, título y nota) y sale en la leyenda; sus marcas en el mapa son tantas como se quiera. */
+export interface IconData {
   id: number
-  x: number
-  y: number
   emoji: string
   title: string
   note: string | null
+  authorName: string
+}
+
+/** Una marca: dónde está un icono en el mapa. */
+export interface MarkerData {
+  id: number
+  iconId: number
+  x: number
+  y: number
   authorName: string
 }
 
@@ -19,13 +27,15 @@ export interface AreaData {
   authorName: string
 }
 
-export type Selection = { type: 'marker'; id: number } | { type: 'area'; id: number } | null
+export type Selection =
+  | { type: 'icon'; id: number }
+  | { type: 'marker'; id: number }
+  | { type: 'area'; id: number }
+  | null
 
-/** Icono que se está creando (id nulo) o editando. */
-export interface MarkerDraft {
+/** Icono que se está creando (id nulo) o editando (afecta a todas sus marcas). */
+export interface IconDraft {
   id: number | null
-  x: number
-  y: number
   emoji: string
   title: string
   note: string
@@ -41,6 +51,7 @@ export interface AreaDraft {
 }
 
 export interface MapViewProps {
+  initialIcons: IconData[]
   initialMarkers: MarkerData[]
   initialAreas: AreaData[]
   canEdit: boolean

@@ -357,16 +357,23 @@ const mapCoordinate = (label: string) =>
     .min(0, { error: `${label} fuera del mapa` })
     .max(1, { error: `${label} fuera del mapa` })
 
-export const saveMarkerSchema = z.object({
-  markerId: optionalId('Icono no válido'),
-  x: mapCoordinate('La posición'),
-  y: mapCoordinate('La posición'),
+/** Un icono (emoji, título y nota) se define una vez; sus marcas en el mapa son otra cosa (`saveMarkerSchema`). */
+export const saveIconSchema = z.object({
+  iconId: optionalId('Icono no válido'),
   emoji: z
     .string({ error: 'Elige un emoji' })
     .trim()
     .refine(isSingleEmoji, { error: 'Elige un solo emoji' }),
   title: mapTitle('El título'),
   note: nullableText(500, 'La nota'),
+})
+
+/** Una marca: dónde está un icono en el mapa. */
+export const saveMarkerSchema = z.object({
+  markerId: optionalId('Marca no válida'),
+  iconId: positiveId('Icono no válido'),
+  x: mapCoordinate('La posición'),
+  y: mapCoordinate('La posición'),
 })
 
 export const deleteMapItemSchema = z.object({ id: positiveId('Elemento no válido') })

@@ -7,6 +7,7 @@ export const metadata: Metadata = { title: 'Mi perfil' }
 
 export default async function PerfilPage() {
   const { profile, rankName } = await requireMember('active')
+  const installUrl = process.env.NEXT_PUBLIC_DISCORD_INSTALL_URL
 
   return (
     <div className="page">
@@ -53,6 +54,15 @@ export default async function PerfilPage() {
               accent={isAccent(profile.accent) ? profile.accent : DEFAULT_ACCENT}
               dmUrgent={profile.dm_urgent}
             />
+            {installUrl && (
+              <p className="muted small">
+                Para recibir los avisos por MD, añade la app de pedidos a tu Discord una sola vez:{' '}
+                <a href={installUrl} target="_blank" rel="noopener noreferrer">
+                  instalar en mi cuenta
+                </a>
+                .
+              </p>
+            )}
           </div>
         </section>
       </div>

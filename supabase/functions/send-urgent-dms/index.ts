@@ -5,7 +5,8 @@
 // SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY los inyecta Supabase automáticamente en la función.
 //
 // Cómo funciona: lee los avisos `pending` de pedidos aún abiertos, abre un MD con cada destinatario por su
-// Discord ID y los marca `sent` o `failed`. Solo puede escribir a quien comparta servidor con el bot.
+// Discord ID y los marca `sent` o `failed`. Escribe a quien haya instalado la aplicación en su cuenta
+// (User Install, sin servidor compartido; verificado con dos cuentas). Quien no la instaló recibe `failed`.
 // Se invoca con POST y la cabecera `x-worker-secret` (p. ej. desde un Database Webhook al insertar en
 // `urgent_notifications`, o desde un cron cada minuto).
 

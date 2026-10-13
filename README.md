@@ -25,6 +25,7 @@ npm run dev                  # http://localhost:3000
 | `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto de Supabase |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Clave *publishable* (pública) |
 | `NEXT_PUBLIC_SITE_URL` | URL pública de la web. **Obligatoria en producción** |
+| `NEXT_PUBLIC_DISCORD_INSTALL_URL` | Opcional. Enlace de instalación de la app de Discord; sale en Mi perfil |
 
 Nunca pongas en el repositorio ni en variables `NEXT_PUBLIC_*` la clave `service_role` ni el token del bot de Discord.
 
@@ -90,8 +91,11 @@ Reglas de diseño que conviene mantener:
 Los pedidos urgentes dejan un aviso en cola por destinatario (`urgent_notifications`). El envío real lo hace la Edge
 Function `supabase/functions/send-urgent-dms`, **preparada pero sin desplegar**:
 
-1. Crea una aplicación con bot en el portal de desarrolladores de Discord e invítala al servidor de la banda. Un bot
-   solo puede escribir por MD a quien comparta servidor con él, y cada miembro debe permitir MD de miembros del servidor.
+1. Crea una aplicación en el portal de desarrolladores de Discord. En **Installation** activa solo **User Install**
+   (sin Guild Install) y copia el Install Link; en **Bot** genera el token. No hace falta ningún servidor: probado con
+   dos cuentas, el bot escribe por MD a quien haya instalado la app en su cuenta («Add to my apps»), sin servidor
+   compartido. Quien no la instale recibe el aviso como `failed`. Pon el enlace en `NEXT_PUBLIC_DISCORD_INSTALL_URL`
+   y cada miembro lo verá en **Mi perfil**.
 2. En Supabase → Edge Functions → Secrets define `DISCORD_BOT_TOKEN` y `URGENT_WORKER_SECRET` (nunca por chat ni en el repo).
 3. Despliega la función y llámala con `POST` y la cabecera `x-worker-secret` (webhook al insertar en
    `urgent_notifications`, o cron cada minuto).

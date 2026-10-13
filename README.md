@@ -72,6 +72,8 @@ Reglas de diseño que conviene mantener:
   las tablas solo tienen `select` para `authenticated`, filtrado por RLS. La web nunca confía solo en la interfaz.
 - **Errores con código propio:** `PK001` libro inmutable · `PK002` stock insuficiente · `PK003` demasiados pedidos.
   No uses `P0004` (es `assert_failure` y `WHEN OTHERS` no lo captura).
+- **Secciones desactivables:** Inventario y Recetas se pueden ocultar desde Administración → Secciones
+  (`roles.manage`, ajuste `disabled_sections`): desaparecen del menú y sus páginas redirigen al resumen. Los datos no se tocan.
 - **Permisos:** `cash.view/write/withdraw`, `inventory.view/edit`, `recipes.view/edit`, `urgent.send`,
   `members.manage`, `roles.manage`. El Líder (nivel 100) nunca pierde `members.manage` ni `roles.manage`.
 - Los tipos de vistas y de argumentos de RPC no admiten `null`: ver `toInventoryItem` y los casts comentados.

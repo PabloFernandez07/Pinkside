@@ -3,20 +3,20 @@ import Link from 'next/link'
 import { ItemThumb } from '@/components/item-thumb'
 import { SectionTabs } from '@/components/section-tabs'
 import { requirePermission } from '@/lib/access'
+import { Pager } from '@/components/pager'
 import { formatDateTime } from '@/lib/format'
+import { PAGE_SIZE, parsePage } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import { ReverseStockForm } from '../inventory-forms'
 
 export const metadata: Metadata = { title: 'Historial de inventario' }
-
-const PAGE_SIZE = 25
 
 export default async function HistorialPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {
   const actor = await requirePermission('inventory.view')
   const canEdit = actor.permissions.has('inventory.edit')
 
   const { pagina } = await searchParams
-  const page = Math.max(1, Number.parseInt(pagina ?? '1', 10) || 1)
+  const page = parsePage(pagina)
   const from = (page - 1) * PAGE_SIZE
 
   const supabase = await createClient()
@@ -112,12 +112,14 @@ export default async function HistorialPage({ searchParams }: { searchParams: Pr
                 </tbody>
               </table>
             )}
-            {lastPage > 1 && (
-              <nav className="pager" aria-label="Paginación del historial">
-                {page > 1 ? <Link href={`/inventario/historial?pagina=${page - 1}`}>← Más recientes</Link> : <span />}
-                {page < lastPage ? <Link href={`/inventario/historial?pagina=${page + 1}`}>Más antiguos →</Link> : <span />}
-              </nav>
-            )}
+            <Pager
+              label="Paginación del historial"
+              path="/inventario/historial"
+              page={page}
+              lastPage={lastPage}
+              previous="← Más recientes"
+              next="Más antiguos →"
+            />
           </div>
         </section>
       </div>

@@ -4,23 +4,31 @@ import { notFound } from 'next/navigation'
 import { requirePermission } from '@/lib/access'
 import { formatDateTime } from '@/lib/format'
 import { formatMoney } from '@/lib/money'
+import { PAGE_SIZE, parsePage } from '@/lib/pagination'
 import { stockState, toInventoryItem } from '@/lib/stock'
 import { createClient } from '@/lib/supabase/server'
 import { ItemThumb } from '@/components/item-thumb'
+import { Pager } from '@/components/pager'
 import { ArchiveForm, EditItemForm, MoveStockForm, ReverseStockForm } from '../inventory-forms'
 import { PhotoForm } from './photo-form'
 
 export const metadata: Metadata = { title: 'Item' }
 
-const HISTORY_LIMIT = 50
-
-export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ItemPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ pagina?: string }>
+}) {
   const actor = await requirePermission('inventory.view')
   const canEdit = actor.permissions.has('inventory.edit')
 
   const { id: rawId } = await params
   const id = Number(rawId)
   if (!Number.isInteger(id) || id <= 0) notFound()
+  const page = parsePage((await searchParams).pagina)
+  const from = (page - 1) * PAGE_SIZE
 
   const supabase = await createClient()
   const [itemRes, movesRes] = await Promise.all([
@@ -31,16 +39,18 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       .maybeSingle(),
     supabase
       .from('stock_movements')
-      .select('id, delta, reason, author_name, created_at, reverses_id')
+      .select('id, delta, reason, author_name, created_at, reverses_id', { count: 'exact' })
       .eq('item_id', id)
       .order('id', { ascending: false })
-      .limit(HISTORY_LIMIT),
+      .range(from, from + PAGE_SIZE - 1),
   ])
   if (itemRes.error || movesRes.error) throw new Error('No se pudo cargar el item')
 
   const item = itemRes.data ? toInventoryItem(itemRes.data) : null
   if (!item) notFound()
   const moves = movesRes.data
+  const totalMoves = movesRes.count ?? 0
+  const lastPage = Math.max(1, Math.ceil(totalMoves / PAGE_SIZE))
 
   const reversedRes = moves.length
     ? await supabase.from('stock_movements').select('reverses_id').in('reverses_id', moves.map((move) => move.id))
@@ -96,7 +106,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         <section className="card">
           <header>
             <h2>Movimientos de este item</h2>
-            <span className="hint">últimos {HISTORY_LIMIT}</span>
+            <span className="hint">{totalMoves === 0 ? 'ninguno' : `${totalMoves} en total`}</span>
           </header>
           <div className="scroll">
             {moves.length === 0 ? (
@@ -138,6 +148,14 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
                 </tbody>
               </table>
             )}
+            <Pager
+              label="Paginación de movimientos del item"
+              path={`/inventario/${item.id}`}
+              page={page}
+              lastPage={lastPage}
+              previous="← Más recientes"
+              next="Más antiguos →"
+            />
           </div>
         </section>
 

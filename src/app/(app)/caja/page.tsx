@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { requirePermission } from '@/lib/access'
 import { formatDateTime } from '@/lib/format'
+import { Pager } from '@/components/pager'
 import { formatMoney, formatSignedMoney } from '@/lib/money'
+import { PAGE_SIZE, parsePage } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import { MovementForm, ReverseForm } from './movement-forms'
 
 export const metadata: Metadata = { title: 'Caja' }
-
-const PAGE_SIZE = 20
 
 export default async function CajaPage({ searchParams }: { searchParams: Promise<{ pagina?: string }> }) {
   const actor = await requirePermission('cash.view')
@@ -16,7 +15,7 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
   const canOut = actor.permissions.has('cash.withdraw')
 
   const { pagina } = await searchParams
-  const page = Math.max(1, Number.parseInt(pagina ?? '1', 10) || 1)
+  const page = parsePage(pagina)
   const from = (page - 1) * PAGE_SIZE
 
   const supabase = await createClient()
@@ -118,12 +117,14 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
                 </tbody>
               </table>
             )}
-            {lastPage > 1 && (
-              <nav className="pager" aria-label="Paginación de movimientos">
-                {page > 1 ? <Link href={`/caja?pagina=${page - 1}`}>← Más recientes</Link> : <span />}
-                {page < lastPage ? <Link href={`/caja?pagina=${page + 1}`}>Más antiguos →</Link> : <span />}
-              </nav>
-            )}
+            <Pager
+              label="Paginación de movimientos"
+              path="/caja"
+              page={page}
+              lastPage={lastPage}
+              previous="← Más recientes"
+              next="Más antiguos →"
+            />
           </div>
         </section>
 

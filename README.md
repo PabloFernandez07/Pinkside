@@ -80,6 +80,10 @@ Reglas de diseño que conviene mantener:
   como proporción 0 a 1 del mapa. Quién lo ve se decide miembro a miembro (columna «Mapa» en Miembros, solo quien tenga `members.allow`; esos
   rangos lo ven siempre; las cuentas nuevas lo tienen apagado y la base de datos lo hace cumplir con RLS). Crear, mover y borrar exige `map.edit` (por defecto nivel 50+, que la base de datos
   vuelve a comprobar). No hay teselas reales por encima del zoom 5: más allá se amplía la última.
+- **Listas paginadas:** todas las listas muestran 12 filas por página (`PAGE_SIZE` en `src/lib/pagination.ts`, parámetro
+  `?pagina=` y el componente `<Pager>`, que conserva los filtros). Caja, historial e historial por item paginan en la
+  base de datos; inventario, recetas, urgentes, miembros y administración recortan en el servidor una lista ya
+  filtrada (la búsqueda sin tildes y los totales necesitan todas las filas).
 - **Secciones desactivables:** Inventario y Recetas se pueden ocultar desde Administración → Secciones
   (`roles.manage`, ajuste `disabled_sections`): desaparecen del menú y sus páginas redirigen al resumen. Los datos no se tocan.
 - **Permisos:** `cash.view/write/withdraw`, `inventory.view/edit`, `recipes.view/edit`, `urgent.send`,

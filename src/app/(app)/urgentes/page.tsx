@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ItemThumb } from '@/components/item-thumb'
+import { Pager } from '@/components/pager'
 import { requireMember } from '@/lib/access'
 import { relativeTime } from '@/lib/activity'
+import { paginate, parsePage } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 import {
   PRIORITY_LABEL,
@@ -16,7 +18,7 @@ import { UrgentForm, type RecipientOption } from './urgent-form'
 
 export const metadata: Metadata = { title: 'Urgentes' }
 
-const CLOSED_SHOWN = 20
+const CLOSED_SHOWN = 10
 
 const isPriority = (value: string): value is UrgentPriority => value === 'high' || value === 'critical'
 const isNotificationStatus = (value: string): value is NotificationStatus =>
@@ -25,7 +27,7 @@ const isNotificationStatus = (value: string): value is NotificationStatus =>
 export default async function UrgentesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ item?: string; titulo?: string }>
+  searchParams: Promise<{ item?: string; titulo?: string; pagina?: string }>
 }) {
   const { profile, permissions } = await requireMember('active')
   const canSend = permissions.has('urgent.send')
@@ -56,6 +58,7 @@ export default async function UrgentesPage({
   }
 
   const open = openRes.data
+  const openPaged = paginate(open, parsePage(params.pagina))
   const closed = closedRes.data
   const items = new Map(itemsRes.data.map((item) => [item.id, item]))
   const delivery = new Map<number, NotificationStatus[]>(
@@ -98,7 +101,7 @@ export default async function UrgentesPage({
               <p className="muted">No hay pedidos urgentes abiertos.</p>
             ) : (
               <ul className="urgent-list">
-                {open.map((request) => {
+                {openPaged.rows.map((request) => {
                   const priority = isPriority(request.priority) ? request.priority : 'high'
                   const summary = describeDelivery(summarizeDelivery(delivery.get(request.id) ?? []))
                   return (
@@ -131,6 +134,7 @@ export default async function UrgentesPage({
                 })}
               </ul>
             )}
+            <Pager label="Paginación de pedidos abiertos" path="/urgentes" page={openPaged.page} lastPage={openPaged.lastPage} />
 
             {closed.length > 0 && (
               <>

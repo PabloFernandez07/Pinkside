@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { requirePermission } from '@/lib/access'
 import { ItemThumb } from '@/components/item-thumb'
+import { Pager } from '@/components/pager'
 import { formatMoney } from '@/lib/money'
+import { pageHref, paginate, parsePage } from '@/lib/pagination'
 import { CRAFT_LABEL, analyzeRecipe, toRecipeData } from '@/lib/recipes'
 import { toInventoryItem, type InventoryItem } from '@/lib/stock'
 import { createClient } from '@/lib/supabase/server'
@@ -15,7 +17,7 @@ const signed = (value: number) => (value < 0 ? `−${formatMoney(Math.abs(value)
 export default async function RecetasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ r?: string; archivadas?: string }>
+  searchParams: Promise<{ r?: string; archivadas?: string; pagina?: string }>
 }) {
   const actor = await requirePermission('recipes.view')
   const canEdit = actor.permissions.has('recipes.edit')
@@ -44,8 +46,11 @@ export default async function RecetasPage({
   const archivedCount = all.filter((recipe) => recipe.archived).length
   const visible = all.filter((recipe) => showArchived || !recipe.archived)
 
+  const paged = paginate(visible, parsePage(params.pagina))
   const requested = Number.parseInt(params.r ?? '', 10)
-  const selected = visible.find((recipe) => recipe.id === requested) ?? visible[0] ?? null
+  const selected = visible.find((recipe) => recipe.id === requested) ?? paged.rows[0] ?? null
+  // Enlaces del catálogo: conservan la página y el filtro de archivadas.
+  const listParams = { archivadas: showArchived ? '1' : undefined }
   const outputName = selected?.outputItemId ? (items.get(selected.outputItemId)?.name ?? null) : null
 
   return (
@@ -77,13 +82,13 @@ export default async function RecetasPage({
               </p>
             ) : (
               <ul className="recipe-list">
-                {visible.map((recipe) => {
+                {paged.rows.map((recipe) => {
                   const a = analyzeRecipe(recipe, 1)
                   const isSelected = selected?.id === recipe.id
                   return (
                     <li key={recipe.id}>
                       <Link
-                        href={`/recetas?r=${recipe.id}${showArchived ? '&archivadas=1' : ''}`}
+                        href={pageHref('/recetas', { ...listParams, r: String(recipe.id) }, paged.page)}
                         className={`recipe-item${isSelected ? ' on' : ''}`}
                         aria-current={isSelected ? 'true' : undefined}
                       >
@@ -108,6 +113,13 @@ export default async function RecetasPage({
                 })}
               </ul>
             )}
+            <Pager
+              label="Paginación de recetas"
+              path="/recetas"
+              params={{ archivadas: showArchived ? '1' : undefined, r: selected ? String(selected.id) : undefined }}
+              page={paged.page}
+              lastPage={paged.lastPage}
+            />
             {archivedCount > 0 && (
               <p className="small">
                 <Link href={showArchived ? '/recetas' : '/recetas?archivadas=1'} className="muted">

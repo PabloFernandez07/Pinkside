@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { requireMember } from '@/lib/access'
+import { Pager } from '@/components/pager'
 import { formatDateTime } from '@/lib/format'
+import { paginate, parsePage } from '@/lib/pagination'
 import { matchesSearch } from '@/lib/stock'
 import { createClient } from '@/lib/supabase/server'
 import { AddAllowedForm, RemoveAllowedForm } from './allowlist-forms'
@@ -8,10 +10,14 @@ import { MapAccessToggle } from './map-access-toggle'
 
 export const metadata: Metadata = { title: 'Miembros' }
 
-export default async function MiembrosPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+export default async function MiembrosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; pagina?: string; accesos?: string }>
+}) {
   const { profile, permissions } = await requireMember('active')
   const canAllow = permissions.has('members.allow')
-  const { q = '' } = await searchParams
+  const { q = '', pagina, accesos } = await searchParams
 
   const supabase = await createClient()
   const [membersRes, allowedRes] = await Promise.all([
@@ -47,6 +53,8 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
       q,
     ),
   )
+  const memberPage = paginate(members, parsePage(pagina))
+  const allowedPage = paginate(allowed, parsePage(accesos))
 
   return (
     <div className="page">
@@ -91,7 +99,7 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
                 </tr>
               </thead>
               <tbody>
-                {members.map((member) => (
+                {memberPage.rows.map((member) => (
                   <tr key={member.id}>
                     <td>
                       <b>{member.fullName}</b>
@@ -116,6 +124,13 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
               </tbody>
             </table>
           )}
+          <Pager
+            label="Paginación de miembros"
+            path="/miembros"
+            params={{ q, accesos }}
+            page={memberPage.page}
+            lastPage={memberPage.lastPage}
+          />
         </div>
       </section>
 
@@ -131,7 +146,7 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
             </p>
             <AddAllowedForm />
             <ul className="allow-list">
-              {allowed.map((entry) => {
+              {allowedPage.rows.map((entry) => {
                 const member = activeByDiscordId.get(entry.discord_id)
                 const name = entry.label ?? member?.discord_username ?? entry.discord_id
                 return (
@@ -149,6 +164,14 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
                 )
               })}
             </ul>
+            <Pager
+              label="Paginación de accesos permitidos"
+              path="/miembros"
+              params={{ q, pagina }}
+              paramName="accesos"
+              page={allowedPage.page}
+              lastPage={allowedPage.lastPage}
+            />
           </div>
         </section>
       )}

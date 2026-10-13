@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ItemThumb } from '@/components/item-thumb'
+import { Pager } from '@/components/pager'
 import { SectionTabs } from '@/components/section-tabs'
 import { requirePermission } from '@/lib/access'
 import { formatMoney } from '@/lib/money'
+import { paginate, parsePage } from '@/lib/pagination'
 import {
   inventoryValue,
   isLowStock,
@@ -27,7 +29,7 @@ const STATE_CHIP = {
 export default async function InventarioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; bajo?: string; archivados?: string }>
+  searchParams: Promise<{ q?: string; bajo?: string; archivados?: string; pagina?: string }>
 }) {
   const actor = await requirePermission('inventory.view')
   const canEdit = actor.permissions.has('inventory.edit')
@@ -56,6 +58,7 @@ export default async function InventarioPage({
       (!onlyLow || isLowStock(item.stock, item.minStock)),
   )
   const filtered = Boolean(query) || onlyLow || showArchived
+  const paged = paginate(visible, parsePage(params.pagina))
 
   return (
     <div className="page">
@@ -135,7 +138,7 @@ export default async function InventarioPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {visible.map((item) => {
+                  {paged.rows.map((item) => {
                     const state = stockState(item.stock, item.minStock)
                     const chip = item.archived ? { label: 'Archivado', className: 'chip' } : STATE_CHIP[state]
                     return (
@@ -166,6 +169,13 @@ export default async function InventarioPage({
                 </tbody>
               </table>
             )}
+            <Pager
+              label="Paginación de items"
+              path="/inventario"
+              params={{ q: query, bajo: onlyLow ? '1' : undefined, archivados: showArchived ? '1' : undefined }}
+              page={paged.page}
+              lastPage={paged.lastPage}
+            />
           </div>
         </section>
 

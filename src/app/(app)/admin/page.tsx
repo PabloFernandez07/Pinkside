@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { AdminTabs } from '@/components/admin-tabs'
+import { Pager } from '@/components/pager'
 import { requirePermission } from '@/lib/access'
+import { paginate, parsePage } from '@/lib/pagination'
 import { canManageRank } from '@/lib/rules'
 import { createClient } from '@/lib/supabase/server'
 import { ApproveForm, BlockForm, RankForm } from './member-actions'
@@ -9,8 +11,13 @@ export const metadata: Metadata = { title: 'Administración' }
 
 const STATUS_LABEL = { pending: 'Pendiente', active: 'Activo', blocked: 'Bloqueado' } as const
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pagina?: string; pendientes?: string }>
+}) {
   const actor = await requirePermission('members.manage')
+  const { pagina, pendientes } = await searchParams
   const supabase = await createClient()
 
   const [membersRes, ranksRes] = await Promise.all([
@@ -29,6 +36,8 @@ export default async function AdminPage() {
   const assignable = ranks.filter((rank) => rank.level <= actorLevel)
   const pending = membersRes.data.filter((member) => member.status === 'pending')
   const members = membersRes.data.filter((member) => member.status !== 'pending')
+  const pendingPage = paginate(pending, parsePage(pendientes))
+  const memberPage = paginate(members, parsePage(pagina))
   const fullName = (member: (typeof members)[number]) =>
     [member.first_name, member.last_name].filter(Boolean).join(' ') || '—'
 
@@ -50,7 +59,7 @@ export default async function AdminPage() {
               <p className="muted">No hay nadie esperando.</p>
             ) : (
               <ul className="stacked">
-                {pending.map((member) => (
+                {pendingPage.rows.map((member) => (
                   <li key={member.id}>
                     <div>
                       <b>{fullName(member)}</b>
@@ -66,6 +75,14 @@ export default async function AdminPage() {
                 ))}
               </ul>
             )}
+            <Pager
+              label="Paginación de pendientes"
+              path="/admin"
+              params={{ pagina }}
+              paramName="pendientes"
+              page={pendingPage.page}
+              lastPage={pendingPage.lastPage}
+            />
           </div>
         </section>
 
@@ -86,7 +103,7 @@ export default async function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {members.map((member) => {
+                {memberPage.rows.map((member) => {
                   const rank = member.rank_id === null ? undefined : rankById.get(member.rank_id)
                   const isSelf = member.id === actor.profile.id
                   const canManage = !isSelf && canManageRank(actorLevel, rank?.level ?? 0)
@@ -121,6 +138,13 @@ export default async function AdminPage() {
                 })}
               </tbody>
             </table>
+            <Pager
+              label="Paginación de miembros"
+              path="/admin"
+              params={{ pendientes }}
+              page={memberPage.page}
+              lastPage={memberPage.lastPage}
+            />
           </div>
         </section>
       </div>

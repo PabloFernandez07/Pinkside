@@ -316,6 +316,18 @@ export type Database = {
         Update: { created_at?: string; id?: never; level?: number; name?: string }
         Relationships: []
       }
+      allowed_discord_ids: {
+        Row: {
+          added_by: string | null
+          added_by_name: string
+          created_at: string
+          discord_id: string
+          label: string | null
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       urgent_notifications: {
         Row: {
           created_at: string
@@ -396,6 +408,11 @@ export type Database = {
       }
     }
     Functions: {
+      add_allowed_discord_id: {
+        Args: { p_discord_id: string; p_label: string }
+        Returns: undefined
+      }
+      remove_allowed_discord_id: { Args: { p_discord_id: string }; Returns: undefined }
       approve_member: {
         Args: { p_member: string; p_rank: number }
         Returns: undefined

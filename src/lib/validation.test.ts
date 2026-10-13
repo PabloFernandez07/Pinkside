@@ -23,6 +23,8 @@ import {
   updateRankSchema,
   closeUrgentSchema,
   urgentRequestSchema,
+  addAllowedIdSchema,
+  removeAllowedIdSchema,
 } from '@/lib/validation'
 
 const valid = { stateId: '48213', firstName: 'Carlos', lastName: 'Vega Ruiz', phone: '555-0142' }
@@ -468,5 +470,26 @@ describe('esquemas de miembros', () => {
     expect(blocked.success && blocked.data.blocked).toBe(true)
     expect(open.success && open.data.blocked).toBe(false)
     expect(blockMemberSchema.safeParse({ memberId, blocked: 'yes' }).success).toBe(false)
+  })
+})
+
+describe('esquemas de la lista de acceso', () => {
+  it('acepta un ID de Discord de 17 a 20 dígitos y normaliza la nota', () => {
+    const result = addAllowedIdSchema.safeParse({ discordId: ' 720656305043275926 ', label: '  Milo  ' })
+    expect(result.success && result.data).toEqual({ discordId: '720656305043275926', label: 'Milo' })
+    expect(addAllowedIdSchema.safeParse({ discordId: '12345678901234567', label: '' }).data?.label).toBeNull()
+    expect(addAllowedIdSchema.safeParse({ discordId: '12345678901234567', label: null }).data?.label).toBeNull()
+  })
+
+  it.each(['', 'abc', '1234567890123456', '123456789012345678901', '7206563050432759x6', '720.656305043275926', '@usuario'])(
+    'rechaza el ID %j',
+    (discordId) => {
+      expect(addAllowedIdSchema.safeParse({ discordId, label: null }).success).toBe(false)
+      expect(removeAllowedIdSchema.safeParse({ discordId }).success).toBe(false)
+    },
+  )
+
+  it('la nota no puede pasar de 60 caracteres', () => {
+    expect(addAllowedIdSchema.safeParse({ discordId: '12345678901234567', label: 'x'.repeat(61) }).success).toBe(false)
   })
 })

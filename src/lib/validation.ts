@@ -312,6 +312,26 @@ export const archiveRecipeSchema = z.object({
 
 export const itemPhotoIdSchema = z.object({ itemId: positiveId('Item no válido') })
 
+/** ID de Discord («snowflake»): 17 a 20 dígitos. */
+const discordId = z
+  .string({ error: 'El ID de Discord es obligatorio' })
+  .trim()
+  .regex(/^\d{17,20}$/, { error: 'El ID de Discord son solo números (17 a 20 dígitos)' })
+
+export const addAllowedIdSchema = z.object({
+  discordId,
+  label: z.preprocess(
+    (value) => (value === null || value === undefined ? '' : value),
+    z
+      .string()
+      .trim()
+      .max(60, { error: 'La nota admite como máximo 60 caracteres' })
+      .transform((value) => (value === '' ? null : value)),
+  ),
+})
+
+export const removeAllowedIdSchema = z.object({ discordId })
+
 export const urgentRequestSchema = z.object({
   title: z
     .string({ error: 'El título es obligatorio' })

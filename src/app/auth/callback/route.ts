@@ -27,5 +27,9 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
-  return NextResponse.redirect(`${origin}/login?error=auth`)
+  // Si el ID de Discord no está en la lista de acceso, el registro falla en la base de datos y Supabase
+  // devuelve este error (sin `code`). Es la única causa habitual, así que se explica con un mensaje propio.
+  const description = searchParams.get('error_description') ?? ''
+  const denied = !code && /saving new user/i.test(description)
+  return NextResponse.redirect(`${origin}/login?error=${denied ? 'denied' : 'auth'}`)
 }

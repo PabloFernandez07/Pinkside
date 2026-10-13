@@ -97,11 +97,14 @@ Function `supabase/functions/send-urgent-dms`, **preparada pero sin desplegar**:
    compartido. Quien no la instale recibe el aviso como `failed`. Pon el enlace en `NEXT_PUBLIC_DISCORD_INSTALL_URL`
    y cada miembro lo verá en **Mi perfil**.
 2. En Supabase → Edge Functions → Secrets define `DISCORD_BOT_TOKEN` y `URGENT_WORKER_SECRET` (nunca por chat ni en el repo).
-3. Despliega la función y llámala con `POST` y la cabecera `x-worker-secret` (webhook al insertar en
-   `urgent_notifications`, o cron cada minuto).
+3. Guarda **el mismo valor** de `URGENT_WORKER_SECRET` en Vault, desde el editor SQL de Supabase:
+   `select vault.create_secret('<valor>', 'urgent_worker_secret');`. La función ya está desplegada
+   (`verify_jwt` desactivado: la autenticación es la cabecera `x-worker-secret`, comparada en tiempo constante).
 
-Pendiente antes de activarla: reservar las filas de forma atómica (si se invoca dos veces a la vez puede duplicar
-avisos) y comparar el secreto en tiempo constante.
+El envío es inmediato: el trigger `urgent_notifications_dm` (migración 0020) llama a la función con `pg_net` en cuanto
+se encolan avisos pendientes. Sin el secreto en Vault no hace nada y los avisos quedan en cola. La función reserva las
+filas de forma atómica (dos pedidos seguidos no duplican MD) y, si Discord limita el ritmo (429), las devuelve a la cola.
+Si una ejecución muere a mitad, sus filas quedan con `error = 'enviando'` y hay que revisarlas a mano.
 
 ## Despliegue en Vercel
 

@@ -2,6 +2,10 @@ import type { InventoryItem } from '@/lib/stock'
 
 export const MAX_BATCHES = 10_000
 
+export type CraftLocation = 'workbench' | 'hand'
+
+export const CRAFT_LABEL: Record<CraftLocation, string> = { workbench: 'Workbench', hand: 'A mano' }
+
 export interface RecipeIngredient {
   itemId: number
   name: string
@@ -21,6 +25,8 @@ export interface RecipeData {
   /** Unidades que produce cada tanda. */
   outputQty: number
   outputItemId: number | null
+  /** Dónde se fabrica: en la Workbench o directamente con las manos. */
+  craftLocation: CraftLocation
   archived: boolean
   ingredients: RecipeIngredient[]
 }
@@ -115,6 +121,7 @@ interface RecipeRow {
   sale_price: number
   output_qty: number
   output_item_id: number | null
+  craft_location: string
   archived: boolean
   recipe_ingredients: { item_id: number; quantity: number }[]
 }
@@ -142,6 +149,7 @@ export function toRecipeData(row: RecipeRow, items: ReadonlyMap<number, Inventor
     salePrice: row.sale_price,
     outputQty: row.output_qty,
     outputItemId: row.output_item_id,
+    craftLocation: row.craft_location === 'hand' ? 'hand' : 'workbench',
     archived: row.archived,
     ingredients,
   }

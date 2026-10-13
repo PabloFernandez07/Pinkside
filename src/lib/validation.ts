@@ -242,8 +242,30 @@ const ingredientsField = z
       }),
   )
 
+/** Dirección opcional de una foto: vacío o ausente = sin URL. La seguridad real (https público) se comprueba al descargarla. */
+export const photoUrlField = z.preprocess(
+  (value) => (value === null || value === undefined ? '' : value),
+  z
+    .string()
+    .trim()
+    .max(500, { error: 'La dirección de la foto es demasiado larga' })
+    .transform((value) => (value === '' ? null : value)),
+)
+
+export const CRAFT_LOCATIONS = ['workbench', 'hand'] as const
+
 export const recipeSchema = z.object({
   recipeId: optionalId('Receta no válida'),
+  // Sin valor (formulario antiguo) = Workbench.
+  craftLocation: z.preprocess(blankTo('workbench'), z.enum(CRAFT_LOCATIONS, { error: 'Elige dónde se fabrica' })),
+  /** new: crea el item producido · existing: usa uno que ya existe · none: solo descuenta ingredientes. */
+  outputMode: z.preprocess(
+    (value) => (value === null || value === undefined || value === '' ? 'auto' : value),
+    z.enum(['new', 'existing', 'none', 'auto'], { error: 'Elige qué item produce' }),
+  ),
+  newItemCategory: optionalText('La categoría', 40),
+  newItemMinStock: itemFieldsSchema.shape.minStock,
+  photoUrl: photoUrlField,
   name: z
     .string({ error: 'El nombre es obligatorio' })
     .trim()
@@ -262,6 +284,15 @@ export const recipeSchema = z.object({
   outputItemId: optionalId('Item de salida no válido'),
   ingredients: ingredientsField,
 })
+  .refine((value) => value.outputMode !== 'existing' || value.outputItemId !== null, {
+    error: 'Elige el item que produce',
+    path: ['outputItemId'],
+  })
+  // `auto` (formulario antiguo): usa el item elegido si lo hay. Solo `existing`/`auto` conservan el item elegido.
+  .transform((value) => {
+    const outputMode = value.outputMode === 'auto' ? (value.outputItemId !== null ? 'existing' : 'none') : value.outputMode
+    return { ...value, outputMode, outputItemId: outputMode === 'existing' ? value.outputItemId : null }
+  })
 
 export const craftSchema = z.object({
   recipeId: positiveId('Receta no válida'),

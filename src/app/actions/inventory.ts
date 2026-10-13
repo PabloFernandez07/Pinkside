@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/access'
 import { MAX_IMPORT_ROWS, parseItemsCsv } from '@/lib/csv'
+import { deleteItemImage, storePhotoFromForm } from '@/lib/server/item-image-store'
 import {
   archiveItemSchema,
   fieldErrors,
@@ -57,14 +58,29 @@ export async function createItem(_prev: FormState, formData: FormData): Promise<
   })
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
 
+  // La foto (archivo o URL) se procesa antes de crear el item: si no vale, no se crea nada a medias.
+  const photo = await storePhotoFromForm(formData)
+  if (!photo.ok) return { errors: { photo: [photo.message] } }
+
   const supabase = await createClient()
-  const { error } = await supabase.rpc('create_item', {
+  const { data: itemId, error } = await supabase.rpc('create_item', {
     p_name: parsed.data.name,
     p_category: parsed.data.category ?? '',
     p_min_stock: parsed.data.minStock,
     p_unit_cost: parsed.data.unitCost,
   })
-  if (error) return friendly(error, 'item')
+  if (error) {
+    await deleteItemImage(photo.path)
+    return friendly(error, 'item')
+  }
+  if (photo.path) {
+    const { error: photoError } = await supabase.rpc('set_item_image', { p_id: itemId, p_path: photo.path })
+    if (photoError) {
+      await deleteItemImage(photo.path)
+      refresh()
+      return { ok: true, message: 'Item creado, pero no se pudo asociar la foto. Añádela desde su ficha.' }
+    }
+  }
 
   refresh()
   return { ok: true, message: 'Item creado' }

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requirePermission } from '@/lib/access'
 import { ItemThumb } from '@/components/item-thumb'
 import { formatMoney } from '@/lib/money'
-import { analyzeRecipe, toRecipeData } from '@/lib/recipes'
+import { CRAFT_LABEL, analyzeRecipe, toRecipeData } from '@/lib/recipes'
 import { toInventoryItem, type InventoryItem } from '@/lib/stock'
 import { createClient } from '@/lib/supabase/server'
 import { RecipeCalculator } from './recipe-calculator'
@@ -28,7 +28,7 @@ export default async function RecetasPage({
   const [recipesRes, itemsRes] = await Promise.all([
     supabase
       .from('recipes')
-      .select('id, name, notes, sale_price, output_qty, output_item_id, archived, recipe_ingredients(item_id, quantity)'),
+      .select('id, name, notes, sale_price, output_qty, output_item_id, craft_location, archived, recipe_ingredients(item_id, quantity)'),
     supabase.from('inventory_overview').select('id, name, category, min_stock, unit_cost, archived, stock, created_at, image_path'),
   ])
   if (recipesRes.error || itemsRes.error) throw new Error('No se pudieron cargar las recetas')
@@ -97,6 +97,7 @@ export default async function RecetasPage({
                             <span className="mono small">
                               {signed(Math.round(a.profitPerUnit))} / ud.
                               {a.maxBatches > 0 ? ` · ${a.maxBatches} ${a.maxBatches === 1 ? 'tanda' : 'tandas'}` : ' · sin stock'}
+                              {` · ${CRAFT_LABEL[recipe.craftLocation]}`}
                             </span>
                             {recipe.archived && <span className="chip tag-block">Archivada</span>}
                           </span>
@@ -139,7 +140,8 @@ export default async function RecetasPage({
                 <p className="muted small recipe-meta">
                   Vende a {formatMoney(selected.salePrice)} la unidad · produce {selected.outputQty}{' '}
                   {selected.outputQty === 1 ? 'unidad' : 'unidades'} por tanda
-                  {outputName ? ` de «${outputName}»` : ' (sin item de salida)'}
+                  {outputName ? ` de «${outputName}»` : ' (sin item de salida)'} · se fabrica{' '}
+                  {selected.craftLocation === 'hand' ? 'a mano' : 'en la Workbench'}
                   {selected.archived ? ' · archivada' : ''}
                 </p>
                 {selected.notes && <p className="recipe-notes">{selected.notes}</p>}

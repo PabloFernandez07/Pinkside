@@ -36,7 +36,7 @@ async function loadStockAndRecipes(supabase: Supabase, withRecipes: boolean) {
     withRecipes
       ? supabase
           .from('recipes')
-          .select('id, name, notes, sale_price, output_qty, output_item_id, archived, recipe_ingredients(item_id, quantity)')
+          .select('id, name, notes, sale_price, output_qty, output_item_id, craft_location, archived, recipe_ingredients(item_id, quantity)')
       : Promise.resolve({ data: [], error: null }),
   ])
   // El mapa incluye los archivados: una receta con un ingrediente archivado no debe perder esa línea al calcular tandas.

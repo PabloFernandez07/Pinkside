@@ -69,6 +69,7 @@ export type Database = {
       recipes: {
         Row: {
           archived: boolean
+          craft_location: string
           created_at: string
           id: number
           name: string
@@ -427,9 +428,11 @@ export type Database = {
       delete_recipe: { Args: { p_id: number }; Returns: undefined }
       save_recipe: {
         Args: {
+          p_craft_location?: string
           p_id: number
           p_ingredients: Json
           p_name: string
+          p_new_item?: Json
           p_notes: string
           p_output_item: number
           p_output_qty: number

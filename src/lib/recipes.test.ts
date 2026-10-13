@@ -9,6 +9,7 @@ const cargador: RecipeData = {
   salePrice: 1800,
   outputQty: 5,
   outputItemId: 4,
+  craftLocation: 'workbench',
   archived: false,
   ingredients: [
     { itemId: 1, name: 'Acero', quantity: 4, unitCost: 120, stock: 100, imagePath: null },
@@ -143,6 +144,7 @@ describe('toRecipeData', () => {
     sale_price: 1800,
     output_qty: 5,
     output_item_id: 9,
+    craft_location: 'hand',
     archived: false,
     recipe_ingredients: [
       { item_id: 1, quantity: 2 },
@@ -154,7 +156,13 @@ describe('toRecipeData', () => {
     const data = toRecipeData(row, items)
     expect(data).toMatchObject({ id: 7, name: 'Cargador 9 mm', salePrice: 1800, outputQty: 5, outputItemId: 9 })
     expect(data.ingredients.map((i) => i.name)).toEqual(['Acero', 'Pólvora'])
+    expect(data.craftLocation).toBe('hand')
     expect(data.ingredients[1]).toEqual({ itemId: 1, name: 'Pólvora', quantity: 2, unitCost: 310, stock: 50, imagePath: null })
+  })
+
+  it('cualquier lugar desconocido se trata como Workbench', () => {
+    expect(toRecipeData({ ...row, craft_location: 'garaje' }, items).craftLocation).toBe('workbench')
+    expect(toRecipeData({ ...row, craft_location: 'workbench' }, items).craftLocation).toBe('workbench')
   })
 
   it('omite ingredientes cuyo item no se conoce', () => {

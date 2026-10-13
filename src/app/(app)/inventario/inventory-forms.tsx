@@ -9,6 +9,7 @@ import {
   updateItem,
 } from '@/app/actions/inventory'
 import { Field, FormMessage } from '@/components/field'
+import { PhotoPicker } from '@/components/photo-picker'
 import { SubmitButton } from '@/components/submit-button'
 import { useManualForm } from '@/components/use-manual-form'
 
@@ -35,6 +36,7 @@ export function NewItemForm() {
         placeholder="0"
         error={state?.errors?.unitCost}
       />
+      <PhotoPicker error={state?.errors?.photo} />
       <div className="wide">
         <FormMessage state={state} />
       </div>

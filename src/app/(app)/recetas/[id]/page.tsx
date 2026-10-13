@@ -19,7 +19,7 @@ export default async function EditarRecetaPage({ params }: { params: Promise<{ i
   const [recipeRes, itemsRes] = await Promise.all([
     supabase
       .from('recipes')
-      .select('id, name, notes, sale_price, output_qty, output_item_id, archived, recipe_ingredients(item_id, quantity)')
+      .select('id, name, notes, sale_price, output_qty, output_item_id, craft_location, archived, recipe_ingredients(item_id, quantity)')
       .eq('id', id)
       .maybeSingle(),
     supabase.from('inventory_overview').select('id, name, category, min_stock, unit_cost, archived, stock, created_at, image_path'),
@@ -57,6 +57,7 @@ export default async function EditarRecetaPage({ params }: { params: Promise<{ i
                 salePrice: recipe.sale_price,
                 outputQty: recipe.output_qty,
                 outputItemId: recipe.output_item_id,
+                craftLocation: recipe.craft_location === 'hand' ? 'hand' : 'workbench',
                 ingredients: recipe.recipe_ingredients.map((line) => ({ itemId: line.item_id, quantity: line.quantity })),
               }}
             />

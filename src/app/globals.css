@@ -212,7 +212,6 @@ select { cursor: pointer; }
 .filters { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; padding: 0 var(--pad) 0.9rem; }
 .filters input[type="search"] { flex: 1 1 14rem; width: auto; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-s); padding: 0.5rem 0.75rem; color: var(--text); }
 .check { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; cursor: pointer; }
-.check input { accent-color: var(--accent); width: 1rem; height: 1rem; }
 .item-link { color: var(--text); font-weight: 600; text-decoration: none; }
 .item-link:hover { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
 .bar { display: block; height: 6px; min-width: 5rem; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
@@ -271,8 +270,6 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 .matrix thead th:first-child { text-align: left; }
 .ctr { text-align: center; }
 .toggle-cell { display: inline-grid; justify-items: center; gap: 0.2rem; }
-input.chk { appearance: auto; accent-color: var(--accent); width: 1.2rem; height: 1.2rem; padding: 0; cursor: pointer; }
-input.chk:disabled { cursor: not-allowed; opacity: 0.45; }
 .rank-list { list-style: none; display: grid; gap: 0.9rem; }
 .rank-list > li { display: grid; gap: 0.4rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--line); }
 .rank-edit { display: grid; grid-template-columns: minmax(0, 1fr) 5rem auto; gap: 0.5rem; align-items: center; }
@@ -331,7 +328,9 @@ input.chk:disabled { cursor: not-allowed; opacity: 0.45; }
 .recipients { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 0.6rem 0.8rem; display: grid; gap: 0.5rem; min-width: 0; }
 .recipients legend { font-size: 0.8125rem; color: var(--muted); padding: 0 0.3rem; }
 .recipients ul { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.2rem 0.8rem; max-height: 9rem; overflow: auto; }
-.recipients label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.recipients label { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; min-height: 1.75rem; }
+.check { gap: 0.6rem; }
+.output-box { display: grid; gap: 0.7rem; }
 .dm-preview { margin: 0.3rem 0 0; padding: 0.8rem 1rem; background: var(--surface-2); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius-s); white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 0.875rem; }
 .urgent-list { list-style: none; display: grid; gap: 0.6rem; }
 .urgent { display: grid; gap: 0.3rem; padding: 0.8rem 1rem; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
@@ -362,7 +361,19 @@ input.chk:disabled { cursor: not-allowed; opacity: 0.45; }
 
 :is(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="submit"]), select, textarea) { border-color: var(--control-line); }
 input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--danger); }
-input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
+input[type="radio"] { accent-color: var(--accent); }
+
+/* Todos los checkboxes de la app son interruptores deslizantes que usan el acento elegido. */
+input[type="checkbox"] { appearance: none; width: 2.5rem; height: 1.4rem; flex: none; padding: 0; border: 0; border-radius: 99px; position: relative; cursor: pointer; background: color-mix(in oklch, var(--muted) 45%, var(--surface)); transition: background 0.15s; }
+input[type="checkbox"]::after { content: ""; position: absolute; top: 0.2rem; left: 0.2rem; width: 1rem; height: 1rem; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px oklch(25% 0.03 165 / 0.3); transition: transform 0.15s; }
+input[type="checkbox"]:checked { background: var(--accent); }
+input[type="checkbox"]:checked::after { transform: translateX(1.1rem); background: var(--accent-ink); }
+input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.45; }
+/* En la matriz de permisos (muchas celdas) el interruptor es más compacto. */
+.toggle-cell input[type="checkbox"] { width: 2rem; height: 1.15rem; }
+.toggle-cell input[type="checkbox"]::after { top: 0.175rem; left: 0.175rem; width: 0.8rem; height: 0.8rem; }
+.toggle-cell input[type="checkbox"]:checked::after { transform: translateX(0.85rem); }
 .sw { background: color-mix(in oklch, var(--muted) 45%, var(--surface)); }
 .sw:checked { background: var(--accent); }
 textarea[name="csv"] { font: 0.8125rem/1.5 var(--font-mono); }
@@ -409,8 +420,16 @@ tr.reversed td { color: var(--muted); }
 .recipe-text { display: grid; gap: 0.15rem; min-width: 0; }
 .recipe-item .item-cell { width: 100%; }
 .item-cell > span:last-child, .item-cell > div { min-width: 0; }
-.photo-edit { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
-.photo-edit input[type="file"] { max-width: 100%; font-size: 0.8125rem; }
+.photo-edit { display: flex; align-items: flex-start; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.photo-edit-form { display: grid; gap: 0.6rem; justify-items: start; flex: 1; min-width: 14rem; }
+.photo-picker { display: grid; gap: 0.4rem; }
+.photo-picker .label-like { font-size: 0.8125rem; color: var(--muted); }
+.photo-picker-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; min-width: 0; }
+.photo-picker input[type="file"] { max-width: 100%; font-size: 0.8125rem; }
+.photo-picker input[type="text"] { flex: 1 1 14rem; width: auto; }
+.seg-btn { border: 0; background: transparent; color: var(--muted); padding: 0.35rem 0.9rem; border-radius: 999px; cursor: pointer; font: inherit; }
+.seg-btn.on { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: var(--shadow); }
+.seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Carga y estados vacíos/error */
 .skeleton { background: linear-gradient(90deg, var(--surface-2), var(--line), var(--surface-2)); background-size: 200% 100%; border-radius: var(--radius); animation: sk 1.4s ease-in-out infinite; }

@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requirePermission } from '@/lib/access'
+import type { Json } from '@/lib/database.types'
+import { deleteItemImage, storePhotoFromForm } from '@/lib/server/item-image-store'
 import {
   archiveRecipeSchema,
   craftSchema,
@@ -18,7 +20,7 @@ type Context = 'save' | 'craft' | 'other'
 /** PostgREST acepta `null` en estos parámetros, pero los tipos generados no lo reflejan. */
 const nullable = <T>(value: T | null): T => value as T
 
-function friendly(error: { code?: string; details?: string | null }, context: Context): FormState {
+function friendly(error: { code?: string; message?: string; details?: string | null }, context: Context): FormState {
   const item = error.details ? `«${error.details}»` : null
   switch (error.code) {
     case '42501':
@@ -32,7 +34,11 @@ function friendly(error: { code?: string; details?: string | null }, context: Co
     case 'PK002':
       return { message: `No hay stock suficiente${item ? ` de ${item}` : ''}.` }
     case '23505':
-      return { message: 'Ya existe una receta con ese nombre.' }
+      return {
+        message: error.message?.includes('items_name_key')
+          ? 'Ya existe un item con el nombre de esta receta: cambia el nombre o elige «Usar un item que ya existe».'
+          : 'Ya existe una receta con ese nombre.',
+      }
     default:
       return { message: 'No se pudo completar la acción. Inténtalo de nuevo.' }
   }
@@ -54,10 +60,33 @@ export async function saveRecipe(_prev: FormState, formData: FormData): Promise<
     outputQty: formData.get('outputQty'),
     outputItemId: formData.get('outputItemId'),
     ingredients: formData.get('ingredients'),
+    craftLocation: formData.get('craftLocation'),
+    outputMode: formData.get('outputMode'),
+    newItemCategory: formData.get('newItemCategory'),
+    newItemMinStock: formData.get('newItemMinStock'),
+    photoUrl: formData.get('photoUrl'),
   })
   if (!parsed.success) return { errors: fieldErrors(parsed.error) }
 
   const recipe = parsed.data
+
+  // Modo «crear item»: el item producido nace con la receta (mismo nombre, su foto y su stock mínimo).
+  // Su coste unitario lo calcula la base de datos a partir de los ingredientes.
+  let newItem: Json | null = null
+  let uploadedPhoto: string | null = null
+  if (recipe.outputMode === 'new') {
+    await requirePermission('inventory.edit')
+    const photo = await storePhotoFromForm(formData)
+    if (!photo.ok) return { errors: { photo: [photo.message] } }
+    uploadedPhoto = photo.path
+    newItem = {
+      name: recipe.name,
+      category: recipe.newItemCategory ?? '',
+      min_stock: recipe.newItemMinStock,
+      image_path: uploadedPhoto ?? '',
+    }
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('save_recipe', {
     p_id: nullable(recipe.recipeId),
@@ -67,8 +96,13 @@ export async function saveRecipe(_prev: FormState, formData: FormData): Promise<
     p_output_qty: recipe.outputQty,
     p_output_item: nullable(recipe.outputItemId),
     p_ingredients: recipe.ingredients.map((line) => ({ item_id: line.itemId, quantity: line.quantity })),
+    p_craft_location: recipe.craftLocation,
+    p_new_item: nullable(newItem),
   })
-  if (error) return friendly(error, 'save')
+  if (error) {
+    await deleteItemImage(uploadedPhoto) // la foto subida no quedó asociada a ningún item
+    return friendly(error, 'save')
+  }
 
   refresh()
   redirect(`/recetas?r=${data}`)

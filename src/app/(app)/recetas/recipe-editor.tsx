@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { deleteRecipe, saveRecipe, setRecipeArchived } from '@/app/actions/recipes'
 import { Field, FormMessage } from '@/components/field'
 import { ItemThumb } from '@/components/item-thumb'
+import { PhotoPicker } from '@/components/photo-picker'
 import { SubmitButton } from '@/components/submit-button'
 import { useManualForm } from '@/components/use-manual-form'
 import { formatMoney, parseMoney } from '@/lib/money'
+import type { CraftLocation } from '@/lib/recipes'
 
 export interface EditorItem {
   id: number
@@ -23,8 +25,11 @@ export interface EditorInitial {
   salePrice: number
   outputQty: number
   outputItemId: number | null
+  craftLocation: CraftLocation
   ingredients: { itemId: number; quantity: number }[]
 }
+
+type OutputMode = 'new' | 'existing' | 'none'
 
 interface Row {
   key: number
@@ -41,6 +46,8 @@ export function RecipeEditor({ items, initial }: { items: EditorItem[]; initial?
       { key: 0, itemId: '', quantity: '1' },
     ],
   )
+  // Receta nueva: lo normal es crear su item; al editar se respeta lo que ya tenía.
+  const [mode, setMode] = useState<OutputMode>(initial ? (initial.outputItemId === null ? 'none' : 'existing') : 'new')
   const [nextKey, setNextKey] = useState(rows.length)
   const [price, setPrice] = useState(initial ? String(initial.salePrice) : '')
   const [outputQty, setOutputQty] = useState(String(initial?.outputQty ?? 1))
@@ -94,21 +101,68 @@ export function RecipeEditor({ items, initial }: { items: EditorItem[]; initial?
         error={state?.errors?.outputQty}
       />
       <div className="field">
-        <label htmlFor="f-outputItemId">Item que se produce (opcional)</label>
-        <select id="f-outputItemId" name="outputItemId" defaultValue={initial?.outputItemId ?? ''} aria-describedby="f-output-hint">
-          <option value="">Ninguno (solo descuenta ingredientes)</option>
-          {items.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-              {item.archived ? ' (archivado)' : ''}
-            </option>
-          ))}
+        <label htmlFor="f-craftLocation">Dónde se fabrica</label>
+        <select id="f-craftLocation" name="craftLocation" defaultValue={initial?.craftLocation ?? 'workbench'}>
+          <option value="workbench">En la Workbench</option>
+          <option value="hand">A mano (no hace falta Workbench)</option>
         </select>
-        <small id="f-output-hint" className="muted">
-          Al fabricar se suma a su stock
-        </small>
-        {state?.errors?.outputItemId && <span className="err">{state.errors.outputItemId[0]}</span>}
+        {state?.errors?.craftLocation && <span className="err">{state.errors.craftLocation[0]}</span>}
       </div>
+      <div className="field">
+        <label htmlFor="f-outputMode">Item que se produce</label>
+        <select id="f-outputMode" name="outputMode" value={mode} onChange={(event) => setMode(event.target.value as OutputMode)}>
+          <option value="new">Crear un item nuevo con esta receta</option>
+          <option value="existing">Usar un item que ya existe</option>
+          <option value="none">Ninguno (solo descuenta ingredientes)</option>
+        </select>
+        <small className="muted">Al fabricar, el producto se suma a su stock</small>
+        {state?.errors?.outputMode && <span className="err">{state.errors.outputMode[0]}</span>}
+      </div>
+
+      {mode === 'new' && (
+        <fieldset className="wide output-box">
+          <legend>El item nuevo</legend>
+          <p className="muted small">
+            Se crea con el mismo nombre que la receta. Su coste por unidad depende de los ingredientes:{' '}
+            <b className="mono">{formatMoney(Math.round(costPerBatch / unitsPerBatch))}</b> ahora mismo.
+          </p>
+          <div className="form">
+            <Field
+              name="newItemCategory"
+              label="Categoría (opcional)"
+              autoComplete="off"
+              maxLength={40}
+              error={state?.errors?.newItemCategory}
+            />
+            <Field
+              name="newItemMinStock"
+              label="Stock mínimo"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="0"
+              hint="Avisa cuando baje de aquí"
+              error={state?.errors?.newItemMinStock}
+            />
+            <PhotoPicker error={state?.errors?.photo} />
+          </div>
+        </fieldset>
+      )}
+      {mode === 'existing' && (
+        <div className="field wide">
+          <label htmlFor="f-outputItemId">Item existente</label>
+          <select id="f-outputItemId" name="outputItemId" defaultValue={initial?.outputItemId ?? ''}>
+            <option value="">Elige un item…</option>
+            {items.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+                {item.archived ? ' (archivado)' : ''}
+              </option>
+            ))}
+          </select>
+          <small className="muted">Su coste por unidad se actualiza con el de los ingredientes al guardar.</small>
+          {state?.errors?.outputItemId && <span className="err">{state.errors.outputItemId[0]}</span>}
+        </div>
+      )}
       <div className="field wide">
         <label htmlFor="f-notes">Notas (opcional)</label>
         <textarea id="f-notes" name="notes" rows={2} maxLength={300} defaultValue={initial?.notes ?? ''} aria-invalid={state?.errors?.notes ? true : undefined} />

@@ -298,7 +298,7 @@ describe('recipeSchema', () => {
 
   it('acepta una receta completa y convierte los tipos', () => {
     const result = recipeSchema.safeParse(base)
-    expect(result.success && result.data).toEqual({
+    expect(result.success && result.data).toMatchObject({
       recipeId: null,
       name: 'Cargador 9 mm',
       notes: null,
@@ -306,7 +306,17 @@ describe('recipeSchema', () => {
       outputQty: 5,
       outputItemId: 4,
       ingredients: lines,
+      // Sin los campos nuevos (formulario antiguo): Workbench y el item elegido se usa como existente.
+      craftLocation: 'workbench',
+      outputMode: 'existing',
     })
+  })
+
+  it('el modo «crear item» ignora el item elegido y acepta lugar de fabricación', () => {
+    const result = recipeSchema.safeParse({ ...base, outputMode: 'new', craftLocation: 'hand', newItemMinStock: '5' })
+    expect(result.success && result.data).toMatchObject({ outputMode: 'new', outputItemId: null, craftLocation: 'hand', newItemMinStock: 5 })
+    expect(recipeSchema.safeParse({ ...base, craftLocation: 'garaje' }).success).toBe(false)
+    expect(recipeSchema.safeParse({ ...base, outputMode: 'existing', outputItemId: '' }).success).toBe(false)
   })
 
   it('al editar acepta el id de la receta', () => {

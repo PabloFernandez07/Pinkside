@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     items.push({ href: '/recetas', label: 'Recetas', icon: 'recetas' })
   }
   items.push({ href: '/urgentes', label: 'Urgentes', icon: 'urgentes' })
+  items.push({ href: '/mapa', label: 'Mapa', icon: 'mapa' })
   items.push({ href: '/miembros', label: 'Miembros', icon: 'miembros' })
   items.push({ href: '/perfil', label: 'Mi perfil', icon: 'perfil' })
   const canMembers = permissions.has('members.manage')

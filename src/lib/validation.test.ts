@@ -25,6 +25,9 @@ import {
   urgentRequestSchema,
   addAllowedIdSchema,
   removeAllowedIdSchema,
+  saveMarkerSchema,
+  saveAreaSchema,
+  deleteMapItemSchema,
 } from '@/lib/validation'
 
 const valid = { stateId: '48213', firstName: 'Carlos', lastName: 'Vega Ruiz', phone: '555-0142' }
@@ -491,5 +494,86 @@ describe('esquemas de la lista de acceso', () => {
 
   it('la nota no puede pasar de 60 caracteres', () => {
     expect(addAllowedIdSchema.safeParse({ discordId: '12345678901234567', label: 'x'.repeat(61) }).success).toBe(false)
+  })
+})
+
+describe('esquemas del mapa', () => {
+  const marker = { markerId: '', x: '0.25', y: 0.5, emoji: ' 🔫 ', title: '  NPC armas ', note: '  Vende de noche ' }
+
+  it('acepta un icono y normaliza los campos', () => {
+    const result = saveMarkerSchema.safeParse(marker)
+    expect(result.success && result.data).toEqual({
+      markerId: null,
+      x: 0.25,
+      y: 0.5,
+      emoji: '🔫',
+      title: 'NPC armas',
+      note: 'Vende de noche',
+    })
+  })
+
+  it('al editar acepta el id y una nota vacía o ausente pasa a null', () => {
+    expect(saveMarkerSchema.safeParse({ ...marker, markerId: '7' }).data?.markerId).toBe(7)
+    expect(saveMarkerSchema.safeParse({ ...marker, note: '' }).data?.note).toBeNull()
+    expect(saveMarkerSchema.safeParse({ ...marker, note: null }).data?.note).toBeNull()
+  })
+
+  it.each([
+    ['fuera del mapa (x)', { x: 1.2 }],
+    ['fuera del mapa (y)', { y: -0.1 }],
+    ['posición no numérica', { x: 'a' }],
+    ['sin emoji', { emoji: '' }],
+    ['texto en vez de emoji', { emoji: 'hola' }],
+    ['dos emojis', { emoji: '🔫🔫' }],
+    ['sin título', { title: '   ' }],
+    ['título largo', { title: 'x'.repeat(61) }],
+    ['nota larga', { note: 'x'.repeat(501) }],
+    ['id inválido', { markerId: '0' }],
+  ])('rechaza un icono %s', (_name, override) => {
+    expect(saveMarkerSchema.safeParse({ ...marker, ...override }).success).toBe(false)
+  })
+
+  const area = {
+    areaId: null,
+    name: ' Zona norte ',
+    note: '',
+    color: '#FF3D8B',
+    points: JSON.stringify([[0.1, 0.1], [0.3, 0.1], [0.2, 0.3]]),
+  }
+
+  it('acepta una zona, pasa el color a minúsculas y lee los puntos', () => {
+    const result = saveAreaSchema.safeParse(area)
+    expect(result.success && result.data).toEqual({
+      areaId: null,
+      name: 'Zona norte',
+      note: null,
+      color: '#ff3d8b',
+      points: [[0.1, 0.1], [0.3, 0.1], [0.2, 0.3]],
+    })
+  })
+
+  it('al editar, sin puntos conserva la forma (points = null)', () => {
+    expect(saveAreaSchema.safeParse({ ...area, areaId: '3', points: null }).data).toMatchObject({ areaId: 3, points: null })
+    expect(saveAreaSchema.safeParse({ ...area, points: '' }).data?.points).toBeNull()
+  })
+
+  it.each([
+    ['dos puntos', { points: JSON.stringify([[0.1, 0.1], [0.3, 0.1]]) }],
+    ['punto fuera del mapa', { points: JSON.stringify([[0.1, 0.1], [0.3, 2], [0.2, 0.3]]) }],
+    ['punto no numérico', { points: JSON.stringify([[0.1, 'a'], [0.3, 0.2], [0.2, 0.3]]) }],
+    ['más de 60 puntos', { points: JSON.stringify(Array.from({ length: 61 }, () => [0.5, 0.5])) }],
+    ['JSON roto', { points: '[[0.1,' }],
+    ['no es una lista', { points: '{"a":1}' }],
+    ['color malo', { color: 'rojo' }],
+    ['color corto', { color: '#fff' }],
+    ['sin nombre', { name: '' }],
+  ])('rechaza una zona con %s', (_name, override) => {
+    expect(saveAreaSchema.safeParse({ ...area, ...override }).success).toBe(false)
+  })
+
+  it('deleteMapItemSchema pide un id positivo', () => {
+    expect(deleteMapItemSchema.safeParse({ id: '5' }).success).toBe(true)
+    expect(deleteMapItemSchema.safeParse({ id: '0' }).success).toBe(false)
+    expect(deleteMapItemSchema.safeParse({ id: 'x' }).success).toBe(false)
   })
 })

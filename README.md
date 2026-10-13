@@ -72,6 +72,11 @@ Reglas de diseño que conviene mantener:
   las tablas solo tienen `select` para `authenticated`, filtrado por RLS. La web nunca confía solo en la interfaz.
 - **Errores con código propio:** `PK001` libro inmutable · `PK002` stock insuficiente · `PK003` demasiados pedidos.
   No uses `P0004` (es `assert_failure` y `WHEN OTHERS` no lo captura).
+- **Mapa (`/mapa`):** Leaflet con teselas de GTA V (satélite y atlas, zoom 0 a 5) en `public/mapa/`, tomadas de
+  [VIRUXE/gtav-map-tiles](https://github.com/VIRUXE/gtav-map-tiles) (sin licencia declarada; el mapa es arte de Rockstar
+  Games y el uso es privado). Iconos con emoji y nota, y zonas dibujadas con puntos, guardados como proporción 0 a 1
+  del mapa. Los ve todo miembro; crear, mover y borrar exige `map.edit` (por defecto nivel 50+, que la base de datos
+  vuelve a comprobar). No hay teselas reales por encima del zoom 5: más allá se amplía la última.
 - **Secciones desactivables:** Inventario y Recetas se pueden ocultar desde Administración → Secciones
   (`roles.manage`, ajuste `disabled_sections`): desaparecen del menú y sus páginas redirigen al resumen. Los datos no se tocan.
 - **Permisos:** `cash.view/write/withdraw`, `inventory.view/edit`, `recipes.view/edit`, `urgent.send`,

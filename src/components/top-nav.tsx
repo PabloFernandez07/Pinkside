@@ -15,6 +15,12 @@ const ICONS = {
   ),
   inventario: <path d="M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10" />,
   recetas: <path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3" />,
+  mapa: (
+    <>
+      <path d="M9 4L3 6.5v13L9 17l6 2.5 6-2.5v-13L15 7 9 4z" />
+      <path d="M9 4v13M15 7v12.5" />
+    </>
+  ),
   miembros: (
     <>
       <circle cx="9" cy="8" r="3.5" />

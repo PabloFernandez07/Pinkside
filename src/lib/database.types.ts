@@ -328,6 +328,39 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      map_areas: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          color: string
+          created_at: string
+          id: number
+          name: string
+          note: string | null
+          points: Json
+          updated_at: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      map_markers: {
+        Row: {
+          author_id: string | null
+          author_name: string
+          created_at: string
+          emoji: string
+          id: number
+          note: string | null
+          title: string
+          updated_at: string
+          x: number
+          y: number
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       urgent_notifications: {
         Row: {
           created_at: string
@@ -408,6 +441,16 @@ export type Database = {
       }
     }
     Functions: {
+      delete_map_area: { Args: { p_id: number }; Returns: undefined }
+      delete_map_marker: { Args: { p_id: number }; Returns: undefined }
+      save_map_area: {
+        Args: { p_color: string; p_id: number; p_name: string; p_note: string; p_points: Json }
+        Returns: number
+      }
+      save_map_marker: {
+        Args: { p_emoji: string; p_id: number; p_note: string; p_title: string; p_x: number; p_y: number }
+        Returns: number
+      }
       get_disabled_sections: { Args: Record<PropertyKey, never>; Returns: string[] }
       set_section_disabled: {
         Args: { p_disabled: boolean; p_section: string }

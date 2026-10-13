@@ -340,6 +340,47 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 .allow-list li { display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
 .allow-main { display: grid; gap: 0.1rem; flex: 1; min-width: 0; }
 .allow-main .mono { overflow-wrap: anywhere; }
+
+/* ---------- Mapa (Leaflet) ---------- */
+.g-map { grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); grid-template-rows: minmax(0, 1fr); align-content: stretch; }
+.map-card { min-height: 0; }
+.map-box { position: relative; flex: 1; min-height: 0; margin: 0 var(--pad) var(--pad); border-radius: var(--radius-s); overflow: hidden; border: 1px solid var(--line); background: #0f3460; }
+.map-box[data-style="atlas"] { background: #89cff0; }
+.map-canvas { position: absolute; inset: 0; background: inherit; }
+.map-canvas.map-crosshair, .map-canvas.map-crosshair .leaflet-interactive { cursor: crosshair; }
+.map-hint { position: absolute; top: 0.7rem; left: 50%; transform: translateX(-50%); z-index: 600; max-width: 90%; text-align: center; padding: 0.4rem 1rem; border-radius: 999px; font-size: 0.8125rem; background: var(--surface); color: var(--text); border: 1px solid var(--accent); box-shadow: var(--shadow); }
+.map-loading { display: grid; place-items: center; min-height: 20rem; }
+/* El preflight de Tailwind (img/svg con max-width: 100%) rompe las teselas y las capas vectoriales de Leaflet. */
+.leaflet-container img, .leaflet-container svg { max-width: none !important; max-height: none !important; }
+.leaflet-container { font: inherit; background: inherit; }
+.map-pin-wrap { background: none; border: 0; }
+.map-pin { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; background: var(--surface); border: 2px solid var(--line); box-shadow: 0 2px 8px oklch(0% 0 0 / 0.45); }
+.map-pin.selected { border-color: var(--accent); transform: scale(1.18); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 45%, transparent), 0 2px 8px oklch(0% 0 0 / 0.45); }
+.map-pin.draft { border: 2px dashed var(--accent); }
+.map-side .scroll { display: grid; gap: 1rem; align-content: start; }
+.map-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.map-form, .map-detail { display: grid; gap: 0.7rem; padding: 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
+.map-detail { border-color: var(--accent); gap: 0.4rem; }
+.map-form h3, .map-detail h3, .legend h3 { font: 600 0.9375rem/1.2 var(--font-body); overflow-wrap: anywhere; }
+.map-form .label-like { font-size: 0.8125rem; color: var(--muted); }
+.map-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+.emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 0.25rem; }
+.emoji-btn { aspect-ratio: 1; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 1.15rem; cursor: pointer; padding: 0; }
+.emoji-btn.on { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 18%, var(--surface)); }
+.color-grid { display: flex; gap: 0.45rem; flex-wrap: wrap; }
+.color-btn { width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; padding: 0; }
+.color-btn.on { outline: 2px solid var(--text); outline-offset: 2px; }
+.legend { display: grid; gap: 1rem; }
+.legend section { display: grid; gap: 0.4rem; }
+.legend-head { display: flex; justify-content: space-between; align-items: center; }
+.legend ul { list-style: none; display: grid; gap: 0.25rem; }
+.legend-item { width: 100%; display: flex; gap: 0.7rem; align-items: center; text-align: left; padding: 0.45rem 0.6rem; border: 1px solid transparent; border-radius: var(--radius-s); background: var(--surface-2); color: var(--text); cursor: pointer; font: inherit; }
+.legend-item:hover { border-color: var(--line); }
+.legend-item.on { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 12%, var(--surface)); }
+.legend-emoji { font-size: 1.35rem; flex: none; }
+.legend-swatch { width: 1.1rem; height: 1.1rem; border-radius: 4px; flex: none; border: 1px solid var(--line); }
+.legend-text { display: grid; min-width: 0; }
+.legend-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dm-preview { margin: 0.3rem 0 0; padding: 0.8rem 1rem; background: var(--surface-2); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius-s); white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 0.875rem; }
 .urgent-list { list-style: none; display: grid; gap: 0.6rem; }
 .urgent { display: grid; gap: 0.3rem; padding: 0.8rem 1rem; border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
@@ -459,7 +500,9 @@ tr.reversed td { color: var(--muted); }
   .shell { height: auto; min-height: 100dvh; }
   .view { overflow: visible; padding: 1rem; }
   .page { height: auto; }
-  .g-two, .g-profile, .g-admin, .g-ranks, .g-caja, .g-inv, .g-rec, .g-dash, .g-urg { grid-template-columns: minmax(0, 1fr); }
+  .g-two, .g-profile, .g-admin, .g-ranks, .g-caja, .g-inv, .g-rec, .g-dash, .g-urg, .g-map { grid-template-columns: minmax(0, 1fr); }
+  .g-map { grid-template-rows: auto; }
+  .map-box { min-height: 60vh; flex: none; }
   .dash-col { grid-auto-rows: auto; }
   .chart { min-height: 13rem; }
   .calc-input { grid-template-columns: minmax(0, 1fr); }

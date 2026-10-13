@@ -1,0 +1,4 @@
+Teselas del mapa de GTA V (estilos satelite y atlas), z0-z5, 256 px, WebP.
+Fuente: https://github.com/VIRUXE/gtav-map-tiles (derivadas de renders del mapa que circulan publicamente).
+Grand Theft Auto V y su mapa pertenecen a Rockstar Games; este uso es privado, sin afiliacion con Rockstar.
+Disposicion: <estilo>/<z>/<x>-<y>.webp, con el origen (0-0) arriba a la izquierda.

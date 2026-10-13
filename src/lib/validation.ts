@@ -1,6 +1,7 @@
 import * as z from 'zod'
 import { ACCENT_IDS, THEME_IDS } from '@/lib/accents'
 import { MAX_AMOUNT, parseMoney } from '@/lib/money'
+import { isSingleEmoji, parsePoints } from '@/lib/map'
 import { MAX_QUANTITY } from '@/lib/stock'
 
 export type FormState =
@@ -331,6 +332,80 @@ export const addAllowedIdSchema = z.object({
 })
 
 export const removeAllowedIdSchema = z.object({ discordId })
+
+/** Texto opcional largo: vacío o ausente = sin texto. */
+const nullableText = (max: number, label: string) =>
+  z.preprocess(
+    (value) => (value === null || value === undefined ? '' : value),
+    z
+      .string()
+      .trim()
+      .max(max, { error: `${label} admite como máximo ${max} caracteres` })
+      .transform((value) => (value === '' ? null : value)),
+  )
+
+const mapTitle = (label: string) =>
+  z
+    .string({ error: `${label} es obligatorio` })
+    .trim()
+    .min(1, { error: `${label} es obligatorio` })
+    .max(60, { error: `${label} admite como máximo 60 caracteres` })
+
+const mapCoordinate = (label: string) =>
+  z.coerce
+    .number({ error: `${label} no válida` })
+    .min(0, { error: `${label} fuera del mapa` })
+    .max(1, { error: `${label} fuera del mapa` })
+
+export const saveMarkerSchema = z.object({
+  markerId: optionalId('Icono no válido'),
+  x: mapCoordinate('La posición'),
+  y: mapCoordinate('La posición'),
+  emoji: z
+    .string({ error: 'Elige un emoji' })
+    .trim()
+    .refine(isSingleEmoji, { error: 'Elige un solo emoji' }),
+  title: mapTitle('El título'),
+  note: nullableText(500, 'La nota'),
+})
+
+export const deleteMapItemSchema = z.object({ id: positiveId('Elemento no válido') })
+
+/** Vértices de una zona: JSON `[[x, y], ...]` (3 a 60 puntos entre 0 y 1). Vacío al editar = conservar los actuales. */
+const areaPoints = z.preprocess(
+  (value) => (value === null || value === undefined || value === '' ? null : value),
+  z
+    .string()
+    .nullable()
+    .transform((value, ctx) => {
+      if (value === null) return null
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(value)
+      } catch {
+        ctx.issues.push({ code: 'custom', message: 'Los puntos de la zona no son válidos', input: value })
+        return z.NEVER
+      }
+      const points = parsePoints(parsed)
+      if (!Array.isArray(parsed) || points.length !== parsed.length || points.length < 3 || points.length > 60) {
+        ctx.issues.push({ code: 'custom', message: 'Una zona necesita entre 3 y 60 puntos dentro del mapa', input: value })
+        return z.NEVER
+      }
+      return points
+    }),
+)
+
+export const saveAreaSchema = z.object({
+  areaId: optionalId('Zona no válida'),
+  name: mapTitle('El nombre'),
+  note: nullableText(500, 'La nota'),
+  color: z
+    .string({ error: 'Elige un color' })
+    .trim()
+    .toLowerCase()
+    .regex(/^#[0-9a-f]{6}$/, { error: 'Color no válido' }),
+  points: areaPoints,
+})
 
 export const urgentRequestSchema = z.object({
   title: z

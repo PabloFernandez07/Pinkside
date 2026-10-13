@@ -238,6 +238,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          map_access: boolean
           phone: string | null
           rank_id: number | null
           state_id: number | null
@@ -469,6 +470,8 @@ export type Database = {
         Returns: number
       }
       delete_map_icon: { Args: { p_id: number }; Returns: undefined }
+      can_view_map: { Args: Record<PropertyKey, never>; Returns: boolean }
+      set_member_map_access: { Args: { p_member: string; p_value: boolean }; Returns: undefined }
       get_disabled_sections: { Args: Record<PropertyKey, never>; Returns: string[] }
       set_section_disabled: {
         Args: { p_disabled: boolean; p_section: string }

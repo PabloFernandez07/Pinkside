@@ -4,6 +4,7 @@ import { formatDateTime } from '@/lib/format'
 import { matchesSearch } from '@/lib/stock'
 import { createClient } from '@/lib/supabase/server'
 import { AddAllowedForm, RemoveAllowedForm } from './allowlist-forms'
+import { MapAccessToggle } from './map-access-toggle'
 
 export const metadata: Metadata = { title: 'Miembros' }
 
@@ -16,7 +17,7 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
   const [membersRes, allowedRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, discord_id, discord_username, first_name, last_name, state_id, phone, created_at, rank:ranks(name, level)')
+      .select('id, discord_id, discord_username, first_name, last_name, state_id, phone, created_at, map_access, rank:ranks(name, level, rank_permissions(permission))')
       .eq('status', 'active'),
     canAllow
       ? supabase
@@ -85,6 +86,7 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
                   <th scope="col">StateID</th>
                   <th scope="col">Teléfono</th>
                   <th scope="col">Rango</th>
+                  {canAllow && <th scope="col">Mapa</th>}
                   <th scope="col">Desde</th>
                 </tr>
               </thead>
@@ -98,6 +100,16 @@ export default async function MiembrosPage({ searchParams }: { searchParams: Pro
                     <td className="mono">{member.state_id ?? '—'}</td>
                     <td className="mono nowrap">{member.phone ?? '—'}</td>
                     <td>{member.rank?.name ?? '—'}</td>
+                    {canAllow && (
+                      <td>
+                        <MapAccessToggle
+                          memberId={member.id}
+                          name={member.fullName}
+                          allowed={member.map_access}
+                          locked={member.rank?.rank_permissions.some((row) => row.permission === 'members.allow') ?? false}
+                        />
+                      </td>
+                    )}
                     <td className="mono nowrap">{formatDateTime(member.created_at)}</td>
                   </tr>
                 ))}

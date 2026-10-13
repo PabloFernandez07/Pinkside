@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
-import { getDisabledSections, requireMember } from '@/lib/access'
+import { canSeeMap, getDisabledSections, requireMember } from '@/lib/access'
 import { TopNav, type NavItem } from '@/components/top-nav'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const { profile, permissions, rankName } = await requireMember('active')
+  const access = await requireMember('active')
+  const { profile, permissions, rankName } = access
 
   const items: NavItem[] = [{ href: '/resumen', label: 'Resumen', icon: 'resumen' }]
   if (permissions.has('cash.view')) items.push({ href: '/caja', label: 'Caja', icon: 'caja' })
@@ -15,7 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     items.push({ href: '/recetas', label: 'Recetas', icon: 'recetas' })
   }
   items.push({ href: '/urgentes', label: 'Urgentes', icon: 'urgentes' })
-  items.push({ href: '/mapa', label: 'Mapa', icon: 'mapa' })
+  if (canSeeMap(access)) items.push({ href: '/mapa', label: 'Mapa', icon: 'mapa' })
   items.push({ href: '/miembros', label: 'Miembros', icon: 'miembros' })
   items.push({ href: '/perfil', label: 'Mi perfil', icon: 'perfil' })
   const canMembers = permissions.has('members.manage')

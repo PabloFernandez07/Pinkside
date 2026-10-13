@@ -64,6 +64,10 @@ export async function requireSection(section: SectionId): Promise<void> {
   if ((await getDisabledSections()).has(section)) redirect('/resumen')
 }
 
+/** Quién ve el mapa: los miembros a los que se les ha dado acceso y quien puede dárselo (la base de datos lo repite). */
+export const canSeeMap = ({ profile, permissions }: MemberAccess): boolean =>
+  profile.map_access || permissions.has('members.allow')
+
 /** Exige un miembro en un estado concreto; si no, lo manda a donde corresponde. */
 export async function requireMember(expected: MemberStatus): Promise<MemberAccess> {
   const access = await getAccess()

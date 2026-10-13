@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { requireMember } from '@/lib/access'
+import { redirect } from 'next/navigation'
+import { canSeeMap, requireMember } from '@/lib/access'
 import { parsePoints } from '@/lib/map'
 import { createClient } from '@/lib/supabase/server'
 import { MapLoader } from './map-loader'
@@ -8,7 +9,9 @@ import type { AreaData, IconData, MarkerData } from './map-types'
 export const metadata: Metadata = { title: 'Mapa' }
 
 export default async function MapaPage() {
-  const { profile, permissions } = await requireMember('active')
+  const access = await requireMember('active')
+  if (!canSeeMap(access)) redirect('/resumen')
+  const { profile, permissions } = access
   const supabase = await createClient()
 
   const [iconsRes, markersRes, areasRes] = await Promise.all([

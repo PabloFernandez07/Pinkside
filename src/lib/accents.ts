@@ -18,7 +18,7 @@ export const THEMES: ReadonlyArray<{ id: ThemeId; label: string }> = [
   { id: 'dark', label: 'Oscuro' },
 ]
 
-export const DEFAULT_ACCENT: AccentId = 'emerald'
+export const DEFAULT_ACCENT: AccentId = 'pink'
 export const DEFAULT_THEME: ThemeId = 'system'
 
 export const THEME_COOKIE = 'pk_theme'

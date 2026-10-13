@@ -15,7 +15,7 @@ import {
 
 describe('catálogo de acentos y temas', () => {
   it('el acento por defecto es esmeralda y el tema por defecto sigue al sistema', () => {
-    expect(DEFAULT_ACCENT).toBe('emerald')
+    expect(DEFAULT_ACCENT).toBe('pink')
     expect(DEFAULT_THEME).toBe('system')
   })
 

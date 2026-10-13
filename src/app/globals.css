@@ -332,6 +332,9 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 .check { gap: 0.6rem; }
 .output-box { display: grid; gap: 0.7rem; }
 .allow-intro { margin-bottom: 0.9rem; }
+.stacked-rows { display: grid; }
+.stacked-rows .row { border-bottom: 1px solid var(--line); cursor: pointer; }
+.stacked-rows .row small { max-width: 38rem; }
 .allow-form { margin-bottom: 1.1rem; padding-bottom: 1.1rem; border-bottom: 1px solid var(--line); }
 .allow-list { list-style: none; display: grid; }
 .allow-list li { display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }

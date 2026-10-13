@@ -408,6 +408,11 @@ export type Database = {
       }
     }
     Functions: {
+      get_disabled_sections: { Args: Record<PropertyKey, never>; Returns: string[] }
+      set_section_disabled: {
+        Args: { p_disabled: boolean; p_section: string }
+        Returns: undefined
+      }
       add_allowed_discord_id: {
         Args: { p_discord_id: string; p_label: string }
         Returns: undefined

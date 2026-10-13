@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
 import { routeForStatus } from '@/lib/rules'
+import { parseDisabledSections, type SectionId } from '@/lib/sections'
 
 export type MemberStatus = Database['public']['Enums']['member_status']
 export type Profile = Database['public']['Tables']['profiles']['Row']
@@ -50,6 +51,18 @@ export const getAccess = cache(async (): Promise<Access> => {
     permissions: new Set(rank.rank_permissions.map((row) => row.permission)),
   }
 })
+
+/** Secciones desactivadas desde Administración. Una vez por petición; si falla la consulta se muestran todas. */
+export const getDisabledSections = cache(async (): Promise<ReadonlySet<SectionId>> => {
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('get_disabled_sections')
+  return error ? new Set() : parseDisabledSections(data)
+})
+
+/** Manda al resumen si la sección está desactivada (se usa en los layouts de Inventario y Recetas). */
+export async function requireSection(section: SectionId): Promise<void> {
+  if ((await getDisabledSections()).has(section)) redirect('/resumen')
+}
 
 /** Exige un miembro en un estado concreto; si no, lo manda a donde corresponde. */
 export async function requireMember(expected: MemberStatus): Promise<MemberAccess> {

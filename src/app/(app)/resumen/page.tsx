@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { requireMember } from '@/lib/access'
+import { getDisabledSections, requireMember } from '@/lib/access'
 import { describeActivity, relativeTime, type ActivityRow } from '@/lib/activity'
 import { bucketByDays, shortDate } from '@/lib/charts'
 import { formatMoney } from '@/lib/money'
@@ -60,8 +60,10 @@ export default async function ResumenPage() {
   const supabase = await createClient()
 
   const canCash = permissions.has('cash.view')
-  const canStock = permissions.has('inventory.view')
-  const canRecipes = permissions.has('recipes.view') && canStock
+  // Una sección desactivada en Administración tampoco aparece en las alertas ni en los indicadores.
+  const disabled = await getDisabledSections()
+  const canStock = permissions.has('inventory.view') && !disabled.has('inventario')
+  const canRecipes = permissions.has('recipes.view') && canStock && !disabled.has('recetas')
   const canMembers = permissions.has('members.manage')
 
   const canUrgent = permissions.has('urgent.send')

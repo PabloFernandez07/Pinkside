@@ -5,7 +5,8 @@
 // URGENT_WORKER_SECRET, y el mismo valor de este último en Vault como `urgent_worker_secret` para el trigger.
 // SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY los inyecta Supabase automáticamente en la función.
 //
-// Cómo funciona: lee los avisos `pending` de pedidos aún abiertos, abre un MD con cada destinatario por su
+// Cómo funciona: lee los avisos `pending` (iniciales de pedidos aún abiertos, y de cierre cuando un pedido se
+// cubre o se cancela, para quien recibió el inicial), abre un MD con cada destinatario por su
 // Discord ID y los marca `sent` o `failed`. Escribe a quien haya instalado la aplicación en su cuenta
 // (User Install, sin servidor compartido; verificado con dos cuentas). Quien no la instaló recibe `failed`.
 // Se invoca con POST y la cabecera `x-worker-secret`: lo hace el trigger `urgent_notifications_dm` (migración
@@ -39,7 +40,28 @@ interface RequestRow {
   author_name: string
   status: string
   created_at: string
+  closed_at: string | null
+  closed_by_name: string | null
   item: { name: string } | null
+}
+
+// Aviso de cierre (pedido cubierto o cancelado) para quien recibió el inicial. Mismo recuadro, con su acento.
+function buildClosedDm(request: RequestRow, accent: string | undefined) {
+  const hex = ACCENT_COLORS[accent ?? ''] ?? ACCENT_COLORS[DEFAULT_ACCENT]
+  const covered = request.status === 'covered'
+  return {
+    content: `${covered ? '✅' : '❌'} **Pedido urgente ${covered ? 'cubierto' : 'cancelado'}**`,
+    embeds: [
+      {
+        title: clip(request.title.trim(), LIMITS.title),
+        description: covered ? 'Ya está cubierto: no hace falta aportar nada más.' : 'El pedido se ha cancelado.',
+        color: Number.parseInt(hex.slice(1), 16),
+        ...(request.item?.name ? { fields: [{ name: 'Item', value: clip(request.item.name, LIMITS.field) }] } : {}),
+        footer: { text: clip(`Cerrado por ${request.closed_by_name ?? 'alguien'} · Pinkside`, LIMITS.footer) },
+        timestamp: request.closed_at ?? request.created_at,
+      },
+    ],
+  }
 }
 
 // Debe coincidir con `buildDm` de src/lib/urgent.ts (es lo que ve la vista previa de la web).
@@ -107,7 +129,7 @@ Deno.serve(async (req) => {
     .in('id', (queued ?? []).map((row) => row.id))
     .eq('status', 'pending')
     .is('error', null)
-    .select('id, recipient:profiles(discord_id, accent), request:urgent_requests(priority, title, body, author_name, status, created_at, item:items(name))')
+    .select('id, kind, recipient:profiles(discord_id, accent), request:urgent_requests(priority, title, body, author_name, status, created_at, closed_at, closed_by_name, item:items(name))')
   if (error) return new Response('Error reservando la cola', { status: 500 })
 
   let sent = 0
@@ -120,7 +142,8 @@ Deno.serve(async (req) => {
     const discordId = recipient?.discord_id
     let outcome: Outcome = { status: 'failed', error: 'datos incompletos' }
 
-    if (request && request.status !== 'open') {
+    // Solo el aviso inicial se descarta si el pedido ya se cerró; el de cierre existe justo por eso.
+    if (request && row.kind === 'new' && request.status !== 'open') {
       outcome = { status: 'skipped', error: 'pedido cerrado antes del envío' }
     } else if (request && discordId) {
       const channel = await discord('/users/@me/channels', token, { recipient_id: discordId })
@@ -131,7 +154,7 @@ Deno.serve(async (req) => {
         const { id } = (await channel.json()) as { id: string }
         // allowed_mentions vacío: un título con @everyone no debe mencionar a nadie.
         const message = await discord(`/channels/${id}/messages`, token, {
-          ...buildDm(request, recipient?.accent),
+          ...(row.kind === 'closed' ? buildClosedDm(request, recipient?.accent) : buildDm(request, recipient?.accent)),
           allowed_mentions: { parse: [] },
         })
         if (message.status === 429) break

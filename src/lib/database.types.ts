@@ -380,6 +380,7 @@ export type Database = {
           created_at: string
           error: string | null
           id: number
+          kind: string
           recipient_id: string
           request_id: number
           sent_at: string | null

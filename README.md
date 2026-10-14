@@ -105,6 +105,10 @@ Function `supabase/functions/send-urgent-dms`, **preparada pero sin desplegar**:
    `select vault.create_secret('<valor>', 'urgent_worker_secret');`. La función ya está desplegada
    (`verify_jwt` desactivado: la autenticación es la cabecera `x-worker-secret`, comparada en tiempo constante).
 
+Al marcar un pedido como **Cubierto** o **Descartar**, `close_urgent_request` encola un aviso de cierre (`kind = 'closed'`,
+migración 0021) para cada persona que recibió el aviso inicial (`status = 'sent'`); quien no llegó a recibirlo tampoco
+recibe el cierre. Los dos avisos usan el recuadro de Discord con el acento de cada miembro.
+
 El envío es inmediato: el trigger `urgent_notifications_dm` (migración 0020) llama a la función con `pg_net` en cuanto
 se encolan avisos pendientes. Sin el secreto en Vault no hace nada y los avisos quedan en cola. La función reserva las
 filas de forma atómica (dos pedidos seguidos no duplican MD) y, si Discord limita el ritmo (429), las devuelve a la cola.

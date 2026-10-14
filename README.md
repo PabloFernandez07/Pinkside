@@ -86,7 +86,10 @@ Reglas de diseño que conviene mantener:
   filtrada (la búsqueda sin tildes y los totales necesitan todas las filas).
 - **Secciones desactivables:** Inventario y Recetas se pueden ocultar desde Administración → Secciones
   (`roles.manage`, ajuste `disabled_sections`): desaparecen del menú y sus páginas redirigen al resumen. Los datos no se tocan.
-- **Permisos:** `cash.view/write/withdraw`, `inventory.view/edit`, `recipes.view/edit`, `urgent.send`,
+- **Dinero por miembro:** pestaña «Por miembro» en Caja (`/caja/miembros`): aportado, retirado y balance de cada miembro,
+  sin contar lo anulado. Exige `cash.members` (por defecto Líder y Lugarteniente, editable en Rangos) además de
+  `cash.view`; la función `cash_by_member` lo vuelve a comprobar en la base de datos (migración 0022).
+- **Permisos:** `cash.view/write/withdraw`, `cash.members`, `inventory.view/edit`, `recipes.view/edit`, `urgent.send`,
   `members.manage`, `roles.manage`. El Líder (nivel 100) nunca pierde `members.manage` ni `roles.manage`.
 - Los tipos de vistas y de argumentos de RPC no admiten `null`: ver `toInventoryItem` y los casts comentados.
 

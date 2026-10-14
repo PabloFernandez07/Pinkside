@@ -487,6 +487,17 @@ export type Database = {
         Args: { p_member: string; p_rank: number }
         Returns: undefined
       }
+      cash_by_member: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          deposited: number
+          member_id: string
+          member_name: string
+          movements: number
+          net: number
+          withdrawn: number
+        }[]
+      }
       cash_daily: {
         Args: { p_days?: number }
         Returns: { balance: number; day: string; expense: number; income: number }[]

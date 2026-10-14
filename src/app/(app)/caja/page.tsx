@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { requirePermission } from '@/lib/access'
 import { formatDateTime } from '@/lib/format'
 import { Pager } from '@/components/pager'
+import { SectionTabs } from '@/components/section-tabs'
 import { formatMoney, formatSignedMoney } from '@/lib/money'
 import { PAGE_SIZE, parsePage } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
@@ -49,6 +50,15 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
         <h1>Caja común</h1>
         <p>Libro de movimientos: se añade, nunca se edita ni se borra</p>
       </div>
+      {actor.permissions.has('cash.members') && (
+        <SectionTabs
+          label="Secciones de la caja"
+          tabs={[
+            { href: '/caja', label: 'Movimientos', current: true },
+            { href: '/caja/miembros', label: 'Por miembro', current: false },
+          ]}
+        />
+      )}
 
       <div className="kpis">
         <article className="kpi main">

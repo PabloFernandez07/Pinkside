@@ -582,6 +582,23 @@ tr.me td { background: color-mix(in oklch, var(--accent) 9%, transparent); }
 .req-form > b { grid-column: 1 / -1; }
 .req-form .field input { width: 100%; }
 
+/* ---------- Paleta de búsqueda (Ctrl+K) ---------- */
+.palette-trigger kbd { margin-left: 0.5rem; padding: 0.05rem 0.4rem; font: 0.6875rem var(--font-mono); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; background: var(--surface-2); }
+.palette { margin: 12vh auto auto; width: min(40rem, 94vw); max-height: 70vh; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: 0 24px 64px oklch(0% 0 0 / 0.3); overflow: hidden; }
+.palette[open] { display: flex; flex-direction: column; }
+.palette::backdrop { background: oklch(10% 0.02 165 / 0.5); backdrop-filter: blur(2px); }
+.palette > input { width: 100%; padding: 1rem 1.2rem; font-size: 1rem; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; color: var(--text); }
+.palette > input:focus-visible { outline: none; border-bottom-color: var(--accent); }
+.palette ul { list-style: none; overflow: auto; padding: 0.4rem; }
+.palette .group { display: block; padding: 0.6rem 0.8rem 0.2rem; font-size: 0.6875rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.palette .option { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.55rem 0.8rem; border-radius: var(--radius-s); cursor: pointer; }
+.palette .option[aria-selected="true"] { background: color-mix(in oklch, var(--accent) 16%, transparent); }
+.palette-empty { padding: 1rem 1.2rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .palette[open] { animation: palette-in 0.12s ease-out; }
+  @keyframes palette-in { from { opacity: 0; transform: translateY(-6px); } }
+}
+
 /* ---------- Pantallas pequeñas: la página pasa a hacer scroll ---------- */
 @media (max-width: 1000px), (max-height: 640px) {
   .shell { height: auto; min-height: 100dvh; }

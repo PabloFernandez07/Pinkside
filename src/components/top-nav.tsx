@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
+import { CommandPalette } from '@/components/command-palette'
 
 const ICONS = {
   resumen: <path d="M3 12l9-8 9 8M5 10v10h14V10" />,
@@ -83,6 +84,7 @@ export function TopNav({ items, name, rank }: TopNavProps) {
         ))}
       </nav>
       <div className="tools">
+        <CommandPalette pages={items.map(({ href, label }) => ({ href, label }))} />
         <span className="who-mini">
           <span className="avatar" aria-hidden="true">
             {initials(name)}

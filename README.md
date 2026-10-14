@@ -89,8 +89,18 @@ Reglas de diseño que conviene mantener:
 - **Dinero por miembro:** pestaña «Por miembro» en Caja (`/caja/miembros`): aportado, retirado y balance de cada miembro,
   sin contar lo anulado. Exige `cash.members` (por defecto Líder y Lugarteniente, editable en Rangos) además de
   `cash.view`; la función `cash_by_member` lo vuelve a comprobar en la base de datos (migración 0022).
+- **Comunidad (migración 0023):** `/ranking` (puntos de 30 días: 1 por movimiento de caja o de inventario y 2 por pedido
+  urgente; «Miembro del mes» y podio), `/miembros/[id]` (perfil público con estadísticas, lema y logros) y `/muro` (avisos
+  de quien tenga `wall.post`, que por defecto son Líder y Lugarteniente; reacciones con emoji para todos). Todo sale de la
+  función `band_stats()`, que **no incluye dinero**. Los logros están en `src/lib/community.ts` (umbrales editables ahí).
+- **Modo recluta:** en Administración → Rangos, «Requisitos para ascender» (antigüedad, movimientos de caja o de
+  inventario, crafteos y pedidos urgentes). Cada miembro ve su avance hacia el siguiente rango en la tarjeta «Tu camino» del
+  Resumen; el rango más bajo ve además unos primeros pasos. El ascenso lo sigue haciendo una persona.
+- **Resumen personalizable:** el botón «Personalizar» elige qué tarjetas se ven y en qué orden. Se guarda en una cookie
+  (`pk_resumen`), por navegador. **Paleta de búsqueda:** `Ctrl+K` / `⌘K` salta a páginas, items, recetas y miembros según
+  los permisos de cada uno.
 - **Permisos:** `cash.view/write/withdraw`, `cash.members`, `inventory.view/edit`, `recipes.view/edit`, `urgent.send`,
-  `members.manage`, `roles.manage`. El Líder (nivel 100) nunca pierde `members.manage` ni `roles.manage`.
+  `members.manage`, `roles.manage`, `wall.post`. El Líder (nivel 100) nunca pierde `members.manage` ni `roles.manage`.
 - Los tipos de vistas y de argumentos de RPC no admiten `null`: ver `toInventoryItem` y los casts comentados.
 
 ## Avisos urgentes por Discord

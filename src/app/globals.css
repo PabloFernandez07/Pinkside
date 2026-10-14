@@ -553,6 +553,35 @@ tr.me td { background: color-mix(in oklch, var(--accent) 9%, transparent); }
 .achievements li.done .icon { filter: none; }
 .achievements .bar { margin-top: 0.15rem; }
 
+/* ---------- Resumen personalizable, «Tu camino» y requisitos de rango ---------- */
+.dash-item { display: flex; min-height: 0; min-width: 0; }
+.dash-item > .card { flex: 1; }
+.customize { position: relative; }
+.customize > summary { list-style: none; cursor: pointer; }
+.customize > summary::-webkit-details-marker { display: none; }
+.customize-body { position: absolute; right: 0; top: calc(100% + 0.4rem); z-index: 20; width: min(22rem, 90vw); display: grid; gap: 0.9rem; padding: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow), 0 12px 32px oklch(0% 0 0 / 0.18); }
+.customize-body[aria-busy="true"] { opacity: 0.85; }
+.customize fieldset { border: 0; padding: 0; display: grid; gap: 0.3rem; min-width: 0; }
+.customize legend { font-size: 0.75rem; color: var(--muted); padding: 0; margin-bottom: 0.2rem; }
+.customize ul { list-style: none; display: grid; gap: 0.2rem; }
+.customize li { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.customize label { display: flex; align-items: center; gap: 0.6rem; cursor: pointer; }
+.move-btns { display: inline-flex; gap: 0.25rem; }
+.move-btns .btn { padding: 0.1rem 0.5rem; }
+
+.path-body { display: grid; gap: 1.2rem; align-content: start; }
+.path h3 { font: 600 0.875rem/1.3 var(--font-body); margin-bottom: 0.4rem; }
+.steps, .reqs { list-style: none; display: grid; }
+.steps li { display: flex; align-items: center; gap: 0.6rem; padding: 0.35rem 0; }
+.steps li.done { color: var(--muted); }
+.steps li.done span:first-child { color: var(--ok); font-weight: 700; }
+.reqs li { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; align-items: center; gap: 0.8rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line); }
+.reqs .bar { min-width: 0; }
+.notice-card .wall-text { white-space: pre-wrap; overflow-wrap: anywhere; margin-bottom: 0.6rem; }
+.req-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: 0.6rem; align-items: end; padding: 0.8rem 0; border-bottom: 1px solid var(--line); }
+.req-form > b { grid-column: 1 / -1; }
+.req-form .field input { width: 100%; }
+
 /* ---------- Pantallas pequeñas: la página pasa a hacer scroll ---------- */
 @media (max-width: 1000px), (max-height: 640px) {
   .shell { height: auto; min-height: 100dvh; }

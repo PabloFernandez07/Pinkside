@@ -1,9 +1,48 @@
 'use client'
 
+import { saveRankRequirements } from '@/app/actions/community'
 import { createRank, deleteRank, updateRank } from '@/app/actions/ranks'
 import { Field, FormMessage } from '@/components/field'
 import { SubmitButton } from '@/components/submit-button'
 import { useManualForm } from '@/components/use-manual-form'
+import { METRIC_KEYS, METRICS, type MetricKey } from '@/lib/community'
+
+interface RequirementsFormProps {
+  rankId: number
+  rankName: string
+  values: Partial<Record<MetricKey, number>>
+}
+
+/** Qué hace falta para llegar a este rango. Un campo vacío quita ese requisito. */
+export function RequirementsForm({ rankId, rankName, values }: RequirementsFormProps) {
+  const { state, pending, onSubmit } = useManualForm(saveRankRequirements)
+  const errors = Object.values(state?.errors ?? {}).flat().filter(Boolean)
+  return (
+    <form onSubmit={onSubmit} className="req-form" noValidate>
+      <b>Para llegar a {rankName}</b>
+      <input type="hidden" name="rankId" value={rankId} />
+      {METRIC_KEYS.map((key) => {
+        const id = `req-${rankId}-${key}`
+        return (
+          <div key={key} className="field">
+            <label htmlFor={id}>{METRICS[key].label}</label>
+            <input id={id} name={key} defaultValue={values[key] ?? ''} inputMode="numeric" autoComplete="off" placeholder="—" />
+          </div>
+        )
+      })}
+      <div className="wide">
+        <SubmitButton pending={pending} className="btn sm" pendingLabel="Guardando…">
+          Guardar requisitos
+        </SubmitButton>
+      </div>
+      {(state?.message || errors.length > 0) && (
+        <p className={state?.ok ? 'notice ok' : 'notice bad'} role={state?.ok ? 'status' : 'alert'}>
+          {state?.message ?? errors[0]}
+        </p>
+      )}
+    </form>
+  )
+}
 
 export function CreateRankForm() {
   const { state, pending, onSubmit } = useManualForm(createRank)

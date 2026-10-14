@@ -4,7 +4,8 @@ import { requirePermission } from '@/lib/access'
 import { LEADER_LEVEL, canManageRank, isProtectedPermission } from '@/lib/rules'
 import { createClient } from '@/lib/supabase/server'
 import { PermissionToggle } from './permission-toggle'
-import { CreateRankForm, DeleteRankForm, EditRankForm } from './rank-forms'
+import { isMetric, type MetricKey } from '@/lib/community'
+import { CreateRankForm, DeleteRankForm, EditRankForm, RequirementsForm } from './rank-forms'
 
 export const metadata: Metadata = { title: 'Rangos y permisos' }
 
@@ -12,14 +13,19 @@ export default async function RangosPage() {
   const actor = await requirePermission('roles.manage')
   const supabase = await createClient()
 
-  const [ranksRes, permissionsRes, grantsRes, membersRes] = await Promise.all([
+  const [ranksRes, permissionsRes, grantsRes, membersRes, reqRes] = await Promise.all([
     supabase.from('ranks').select('id, name, level').order('level', { ascending: false }),
     supabase.from('permissions').select('key, label, description').order('key'),
     supabase.from('rank_permissions').select('rank_id, permission'),
     supabase.from('profiles').select('rank_id').not('rank_id', 'is', null),
+    supabase.from('rank_requirements').select('rank_id, metric, target'),
   ])
-  if (ranksRes.error || permissionsRes.error || grantsRes.error || membersRes.error) {
+  if (ranksRes.error || permissionsRes.error || grantsRes.error || membersRes.error || reqRes.error) {
     throw new Error('No se pudieron cargar los rangos')
+  }
+  const requirements = new Map<number, Partial<Record<MetricKey, number>>>()
+  for (const row of reqRes.data) {
+    if (isMetric(row.metric)) requirements.set(row.rank_id, { ...requirements.get(row.rank_id), [row.metric]: row.target })
   }
 
   const actorLevel = actor.rankLevel ?? 0
@@ -134,6 +140,23 @@ export default async function RangosPage() {
                   )
                 })}
               </ul>
+            </div>
+          </section>
+
+          <section className="card">
+            <header>
+              <h2>Requisitos para ascender</h2>
+              <span className="hint">se ven en «Tu camino»</span>
+            </header>
+            <div className="scroll">
+              {ranks.filter((rank) => rank.level < LEADER_LEVEL && canManageRank(actorLevel, rank.level)).map((rank) => (
+                <RequirementsForm
+                  key={`${rank.id}:${JSON.stringify(requirements.get(rank.id) ?? {})}`}
+                  rankId={rank.id}
+                  rankName={rank.name}
+                  values={requirements.get(rank.id) ?? {}}
+                />
+              ))}
             </div>
           </section>
 

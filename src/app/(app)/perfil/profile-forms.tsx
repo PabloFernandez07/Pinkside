@@ -8,7 +8,7 @@ import { useManualForm } from '@/components/use-manual-form'
 import { ACCENTS, THEMES, type AccentId, type ThemeId } from '@/lib/accents'
 
 interface ProfileFormProps {
-  defaults: { firstName: string; lastName: string; phone: string }
+  defaults: { firstName: string; lastName: string; phone: string; motto: string }
 }
 
 export function ProfileForm({ defaults }: ProfileFormProps) {
@@ -25,6 +25,15 @@ export function ProfileForm({ defaults }: ProfileFormProps) {
       <Field name="firstName" label="Nombre" autoComplete="off" error={state?.errors?.firstName} required {...bind('firstName')} />
       <Field name="lastName" label="Apellidos" autoComplete="off" error={state?.errors?.lastName} required {...bind('lastName')} />
       <Field name="phone" label="Teléfono" inputMode="tel" autoComplete="off" error={state?.errors?.phone} required {...bind('phone')} />
+      <Field
+        name="motto"
+        label="Lema (opcional)"
+        autoComplete="off"
+        maxLength={80}
+        hint="Sale en tu perfil público y en el ranking"
+        error={state?.errors?.motto}
+        {...bind('motto')}
+      />
       <div className="wide">
         <FormMessage state={state} />
       </div>

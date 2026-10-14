@@ -239,6 +239,7 @@ export type Database = {
           id: string
           last_name: string | null
           map_access: boolean
+          motto: string | null
           phone: string | null
           rank_id: number | null
           state_id: number | null
@@ -256,6 +257,7 @@ export type Database = {
           first_name?: string | null
           id: string
           last_name?: string | null
+          motto?: string | null
           phone?: string | null
           rank_id?: number | null
           state_id?: number | null
@@ -273,6 +275,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          motto?: string | null
           phone?: string | null
           rank_id?: number | null
           state_id?: number | null
@@ -398,6 +401,24 @@ export type Database = {
           },
         ]
       }
+      rank_requirements: {
+        Row: { metric: string; rank_id: number; target: number }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      wall_posts: {
+        Row: { author_id: string | null; author_name: string; body: string; created_at: string; id: number; pinned: boolean }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      wall_reactions: {
+        Row: { emoji: string; member_id: string; post_id: number }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       urgent_requests: {
         Row: {
           author_id: string | null
@@ -487,6 +508,28 @@ export type Database = {
         Args: { p_member: string; p_rank: number }
         Returns: undefined
       }
+      band_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          cash_moves: number
+          crafts: number
+          joined_at: string
+          member_id: string
+          member_name: string
+          motto: string
+          points_30d: number
+          rank_level: number
+          rank_name: string
+          stock_moves: number
+          urgents: number
+        }[]
+      }
+      set_rank_requirement: { Args: { p_metric: string; p_rank: number; p_target: number }; Returns: undefined }
+      post_wall: { Args: { p_body: string; p_pinned: boolean }; Returns: number }
+      delete_wall_post: { Args: { p_id: number }; Returns: undefined }
+      set_wall_pinned: { Args: { p_id: number; p_pinned: boolean }; Returns: undefined }
+      toggle_wall_reaction: { Args: { p_emoji: string; p_post: number }; Returns: undefined }
       cash_by_member: {
         Args: Record<PropertyKey, never>
         Returns: {

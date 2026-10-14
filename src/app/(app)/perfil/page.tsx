@@ -40,6 +40,7 @@ export default async function PerfilPage() {
                 firstName: profile.first_name ?? '',
                 lastName: profile.last_name ?? '',
                 phone: profile.phone ?? '',
+                motto: profile.motto ?? '',
               }}
             />
           </div>

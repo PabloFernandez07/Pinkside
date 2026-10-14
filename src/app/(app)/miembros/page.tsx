@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { requireMember } from '@/lib/access'
 import { Pager } from '@/components/pager'
 import { formatDateTime } from '@/lib/format'
@@ -77,9 +78,9 @@ export default async function MiembrosPage({
             Buscar
           </button>
           {q && (
-            <a href="/miembros" className="muted small">
+            <Link href="/miembros" className="muted small">
               Limpiar
-            </a>
+            </Link>
           )}
         </form>
         <div className="scroll">
@@ -102,7 +103,9 @@ export default async function MiembrosPage({
                 {memberPage.rows.map((member) => (
                   <tr key={member.id}>
                     <td>
-                      <b>{member.fullName}</b>
+                      <Link href={`/miembros/${member.id}`}>
+                        <b>{member.fullName}</b>
+                      </Link>
                     </td>
                     <td className="muted">@{member.discord_username ?? '—'}</td>
                     <td className="mono">{member.state_id ?? '—'}</td>

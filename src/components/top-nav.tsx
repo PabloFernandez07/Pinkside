@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from '@/app/actions/auth'
@@ -63,6 +63,10 @@ const initials = (name: string) =>
 
 export function TopNav({ items, name, rank }: TopNavProps) {
   const pathname = usePathname()
+  // Con muchos menús, la página actual puede quedar fuera de la zona visible: se desplaza hasta ella.
+  useEffect(() => {
+    document.querySelector('#nav [aria-current]')?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+  }, [pathname])
   return (
     <header className="topnav">
       <div className="brand">

@@ -1,52 +1,44 @@
 'use client'
 
-import { registerMovement, reverseMovement } from '@/app/actions/cash'
+import { useState } from 'react'
+import { reverseMovement, setBalance } from '@/app/actions/cash'
 import { Field, FormMessage } from '@/components/field'
 import { SubmitButton } from '@/components/submit-button'
 import { useManualForm } from '@/components/use-manual-form'
+import { formatMoney, formatSignedMoney, parseMoney } from '@/lib/money'
 
-interface MovementFormProps {
-  /** Puede registrar entradas (cash.write). */
-  canIn: boolean
-  /** Puede registrar salidas (cash.withdraw). */
-  canOut: boolean
-}
-
-export function MovementForm({ canIn, canOut }: MovementFormProps) {
-  const { state, pending, onSubmit } = useManualForm(registerMovement, { resetOnSuccess: true })
+/**
+ * Cuenta del miembro: se escribe el saldo total (no lo que se añade) y se muestra la diferencia que se va a registrar.
+ * La página lo monta con `key={current}` para que se reinicie al cambiar el saldo.
+ */
+export function BalanceForm({ current }: { current: number }) {
+  const { state, pending, onSubmit } = useManualForm(setBalance)
+  const [value, setValue] = useState(String(current))
+  const next = parseMoney(value)
+  const delta = next === null ? null : next - current
   return (
     <form onSubmit={onSubmit} className="form" noValidate>
-      <div className="field wide">
-        <label htmlFor="f-kind">Tipo</label>
-        <select id="f-kind" name="kind" defaultValue={canIn ? 'in' : 'out'}>
-          {canIn && <option value="in">Entrada (dinero que entra)</option>}
-          {canOut && <option value="out">Salida (dinero que sale)</option>}
-        </select>
-      </div>
       <Field
-        name="amount"
-        label="Importe"
+        name="balance"
+        label="Saldo total de tu cuenta"
         inputMode="numeric"
         autoComplete="off"
-        placeholder="1.500"
-        error={state?.errors?.amount}
-        required
-      />
-      <Field
-        name="reason"
-        label="Motivo"
-        autoComplete="off"
-        maxLength={160}
-        placeholder="Venta, compra, reparto…"
-        error={state?.errors?.reason}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        hint={
+          delta === null || delta === 0
+            ? `Ahora tienes ${formatMoney(current)}. Escribe lo que tienes en total.`
+            : `Se registrará ${formatSignedMoney(delta)} (de ${formatMoney(current)} a ${formatMoney(next ?? 0)}).`
+        }
+        error={state?.errors?.balance}
         required
       />
       <div className="wide">
         <FormMessage state={state} />
       </div>
       <div className="wide">
-        <SubmitButton pending={pending} pendingLabel="Registrando…" className="btn block">
-          Registrar movimiento
+        <SubmitButton pending={pending} pendingLabel="Guardando…" className="btn block">
+          Actualizar mi cuenta
         </SubmitButton>
       </div>
     </form>

@@ -86,7 +86,10 @@ Reglas de diseño que conviene mantener:
   filtrada (la búsqueda sin tildes y los totales necesitan todas las filas).
 - **Secciones desactivables:** Inventario y Recetas se pueden ocultar desde Administración → Secciones
   (`roles.manage`, ajuste `disabled_sections`): desaparecen del menú y sus páginas redirigen al resumen. Los datos no se tocan.
-- **Dinero por miembro:** pestaña «Por miembro» en Caja (`/caja/miembros`): aportado, retirado y balance de cada miembro,
+- **Cuenta de cada miembro (migración 0024):** nadie registra «entra X / sale X»: cada miembro escribe el saldo **total**
+  de su cuenta en Caja → «Mi cuenta» y la función `set_cash_balance` guarda la diferencia en el libro («Cuenta: $20.000 →
+  $35.000»). Subir el saldo exige `cash.write`; bajarlo, `cash.withdraw`. El saldo de la caja es la suma de las cuentas.
+- **Dinero por miembro:** pestaña «Por miembro» en Caja (`/caja/miembros`): saldo de la cuenta de cada miembro,
   sin contar lo anulado. Exige `cash.members` (por defecto Líder y Lugarteniente, editable en Rangos) además de
   `cash.view`; la función `cash_by_member` lo vuelve a comprobar en la base de datos (migración 0022).
 - **Comunidad (migración 0023):** `/ranking` (puntos de 30 días: 1 por movimiento de caja o de inventario y 2 por pedido

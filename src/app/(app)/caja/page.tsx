@@ -6,7 +6,7 @@ import { SectionTabs } from '@/components/section-tabs'
 import { formatMoney, formatSignedMoney } from '@/lib/money'
 import { PAGE_SIZE, parsePage } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
-import { MovementForm, ReverseForm } from './movement-forms'
+import { BalanceForm, ReverseForm } from './movement-forms'
 
 export const metadata: Metadata = { title: 'Caja' }
 
@@ -20,15 +20,16 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
   const from = (page - 1) * PAGE_SIZE
 
   const supabase = await createClient()
-  const [summaryRes, listRes] = await Promise.all([
+  const [summaryRes, listRes, mineRes] = await Promise.all([
     supabase.from('cash_summary').select('balance, income_7d, expense_7d, movements').single(),
     supabase
       .from('cash_movements')
       .select('id, amount, reason, author_name, created_at, reverses_id', { count: 'exact' })
       .order('id', { ascending: false })
       .range(from, from + PAGE_SIZE - 1),
+    supabase.rpc('my_cash_balance'),
   ])
-  if (summaryRes.error || listRes.error) throw new Error('No se pudo cargar la caja')
+  if (summaryRes.error || listRes.error || mineRes.error) throw new Error('No se pudo cargar la caja')
 
   const rows = listRes.data
   const total = listRes.count ?? 0
@@ -48,7 +49,7 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
     <div className="page">
       <div className="phead">
         <h1>Caja común</h1>
-        <p>Libro de movimientos: se añade, nunca se edita ni se borra</p>
+        <p>Cada miembro actualiza el saldo de su cuenta; el libro nunca se edita ni se borra</p>
       </div>
       {actor.permissions.has('cash.members') && (
         <SectionTabs
@@ -140,11 +141,11 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
 
         <section className="card">
           <header>
-            <h2>Registrar movimiento</h2>
+            <h2>Mi cuenta</h2>
           </header>
           <div className="scroll">
             {canIn || canOut ? (
-              <MovementForm canIn={canIn} canOut={canOut} />
+              <BalanceForm key={mineRes.data} current={mineRes.data} />
             ) : (
               <p className="muted">Tu rango solo permite consultar la caja.</p>
             )}

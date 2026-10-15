@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { Pager } from '@/components/pager'
 import { SectionTabs } from '@/components/section-tabs'
 import { requirePermission } from '@/lib/access'
-import { formatMoney, formatSignedMoney } from '@/lib/money'
+import { formatMoney } from '@/lib/money'
 import { paginate, parsePage } from '@/lib/pagination'
 import { createClient } from '@/lib/supabase/server'
 
@@ -19,14 +19,13 @@ export default async function CajaMiembrosPage({ searchParams }: { searchParams:
   if (error) throw new Error('No se pudo cargar el dinero por miembro')
 
   const paged = paginate(data, parsePage(pagina))
-  const deposited = data.reduce((sum, row) => sum + row.deposited, 0)
-  const withdrawn = data.reduce((sum, row) => sum + row.withdrawn, 0)
+  const total = data.reduce((sum, row) => sum + row.net, 0)
 
   return (
     <div className="page">
       <div className="phead">
         <h1>Caja común</h1>
-        <p>Lo que ha aportado y retirado cada miembro, sin contar lo anulado</p>
+        <p>Saldo de la cuenta de cada miembro, sin contar lo anulado</p>
       </div>
       <SectionTabs
         label="Secciones de la caja"
@@ -38,19 +37,9 @@ export default async function CajaMiembrosPage({ searchParams }: { searchParams:
 
       <div className="kpis">
         <article className="kpi main">
-          <span className="l">Balance de los miembros</span>
-          <strong className={`v mono${deposited - withdrawn < 0 ? ' neg' : ''}`}>{formatMoney(deposited - withdrawn)}</strong>
-          <span className="s">aportado menos retirado</span>
-        </article>
-        <article className="kpi">
-          <span className="l">Aportado</span>
-          <strong className="v mono">{formatMoney(deposited)}</strong>
-          <span className="s">entradas de {data.length} {data.length === 1 ? 'miembro' : 'miembros'}</span>
-        </article>
-        <article className="kpi">
-          <span className="l">Retirado</span>
-          <strong className="v mono">{formatMoney(withdrawn)}</strong>
-          <span className="s">salidas registradas</span>
+          <span className="l">Suma de las cuentas</span>
+          <strong className={`v mono${total < 0 ? ' neg' : ''}`}>{formatMoney(total)}</strong>
+          <span className="s">de {data.length} {data.length === 1 ? 'miembro' : 'miembros'}</span>
         </article>
       </div>
 
@@ -68,10 +57,8 @@ export default async function CajaMiembrosPage({ searchParams }: { searchParams:
                 <thead>
                   <tr>
                     <th>Miembro</th>
-                    <th className="num">Aportado</th>
-                    <th className="num">Retirado</th>
-                    <th className="num">Balance</th>
-                    <th className="num">Movimientos</th>
+                    <th className="num">Saldo</th>
+                    <th className="num">Actualizaciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -80,9 +67,7 @@ export default async function CajaMiembrosPage({ searchParams }: { searchParams:
                       <td>
                         <b>{row.member_name}</b>
                       </td>
-                      <td className="num mono in">{formatMoney(row.deposited)}</td>
-                      <td className="num mono out">{formatMoney(row.withdrawn)}</td>
-                      <td className={`num mono ${row.net < 0 ? 'out' : 'in'}`}>{formatSignedMoney(row.net)}</td>
+                      <td className={`num mono ${row.net < 0 ? 'out' : 'in'}`}>{formatMoney(row.net)}</td>
                       <td className="num mono">{row.movements}</td>
                     </tr>
                   ))}

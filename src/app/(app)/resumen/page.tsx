@@ -167,7 +167,7 @@ export default async function ResumenPage() {
     ? [
         { label: 'Escribe tu lema en Mi perfil', done: Boolean(profile.motto), href: '/perfil' },
         ...(permissions.has('cash.write')
-          ? [{ label: 'Registra tu primer movimiento de caja', done: path.stat.cashMoves > 0, href: '/caja' }]
+          ? [{ label: 'Actualiza el saldo de tu cuenta en Caja', done: path.stat.cashMoves > 0, href: '/caja' }]
           : []),
         ...(canStock && permissions.has('inventory.edit')
           ? [{ label: 'Mueve algo en el inventario', done: path.stat.stockMoves > 0, href: '/inventario' }]

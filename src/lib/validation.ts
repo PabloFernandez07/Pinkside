@@ -121,8 +121,6 @@ const moneyString = (min: number, requiredMessage: string) =>
         .max(MAX_AMOUNT, { error: 'El importe máximo es $1.000.000.000' }),
     )
 
-const amountField = moneyString(1, 'El importe es obligatorio')
-
 /** Vacío o ausente cuenta como el valor por defecto (los campos opcionales de un formulario). */
 const blankTo = (fallback: string) => (value: unknown) =>
   value === null || value === undefined || (typeof value === 'string' && value.trim() === '') ? fallback : value
@@ -145,10 +143,9 @@ const movementReason = (max: number) =>
     .min(2, { error: 'El motivo necesita al menos 2 caracteres' })
     .max(max, { error: `El motivo admite como máximo ${max} caracteres` })
 
-export const cashMovementSchema = z.object({
-  kind: z.enum(['in', 'out'], { error: 'Tipo de movimiento no válido' }),
-  amount: amountField,
-  reason: movementReason(160),
+/** Saldo total de la cuenta del miembro: entero entre 0 y MAX_AMOUNT. */
+export const cashBalanceSchema = z.object({
+  balance: moneyString(0, 'El saldo es obligatorio'),
 })
 
 export const reverseMovementSchema = z.object({

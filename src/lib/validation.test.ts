@@ -7,7 +7,7 @@ import {
   recipeIdSchema,
   recipeSchema,
   blockMemberSchema,
-  cashMovementSchema,
+  cashBalanceSchema,
   importItemsSchema,
   itemFieldsSchema,
   reverseStockSchema,
@@ -148,43 +148,23 @@ describe('esquemas de rangos', () => {
   })
 })
 
-describe('cashMovementSchema', () => {
-  const base = { kind: 'in', amount: '1.500', reason: 'Venta de materiales' }
-
-  it('acepta una entrada y convierte el importe a número entero', () => {
-    const result = cashMovementSchema.safeParse(base)
-    expect(result.success).toBe(true)
-    if (result.success) expect(result.data).toEqual({ kind: 'in', amount: 1500, reason: 'Venta de materiales' })
+describe('cashBalanceSchema', () => {
+  it('convierte el saldo a número entero', () => {
+    const result = cashBalanceSchema.safeParse({ balance: '35.000' })
+    expect(result.success && result.data.balance).toBe(35000)
   })
 
-  it('acepta una salida y recorta el motivo', () => {
-    const result = cashMovementSchema.safeParse({ kind: 'out', amount: '250', reason: '  Munición  ' })
-    expect(result.success && result.data.reason).toBe('Munición')
-    expect(result.success && result.data.kind).toBe('out')
+  it('acepta 0 y el máximo', () => {
+    expect(cashBalanceSchema.safeParse({ balance: '0' }).success).toBe(true)
+    expect(cashBalanceSchema.safeParse({ balance: '1.000.000.000' }).success).toBe(true)
   })
 
-  it.each(['', '0', '-5', '1.5', 'abc', '12,50', '1.000.000.001'])('rechaza el importe %j', (amount) => {
-    expect(cashMovementSchema.safeParse({ ...base, amount }).success).toBe(false)
+  it.each(['', '-5', '1.5', 'abc', '12,50', '1.000.000.001', null])('rechaza el saldo %j', (balance) => {
+    expect(cashBalanceSchema.safeParse({ balance }).success).toBe(false)
   })
 
-  it('acepta el importe máximo', () => {
-    expect(cashMovementSchema.safeParse({ ...base, amount: '1.000.000.000' }).success).toBe(true)
-  })
-
-  it('rechaza un importe ausente (null de FormData)', () => {
-    expect(cashMovementSchema.safeParse({ ...base, amount: null }).success).toBe(false)
-  })
-
-  it.each(['robar', '', 'IN', null])('rechaza el tipo %j', (kind) => {
-    expect(cashMovementSchema.safeParse({ ...base, kind }).success).toBe(false)
-  })
-
-  it.each(['', ' ', 'a', 'x'.repeat(161)])('rechaza el motivo %j', (reason) => {
-    expect(cashMovementSchema.safeParse({ ...base, reason }).success).toBe(false)
-  })
-
-  it('explica el error del importe en español', () => {
-    const result = cashMovementSchema.safeParse({ ...base, amount: '12,50' })
+  it('explica el error en español', () => {
+    const result = cashBalanceSchema.safeParse({ balance: '12,50' })
     expect(!result.success && result.error.issues[0].message).toContain('Importe no válido')
   })
 })

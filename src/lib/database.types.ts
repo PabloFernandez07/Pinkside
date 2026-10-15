@@ -603,10 +603,8 @@ export type Database = {
       has_perm: { Args: { p_permission: string }; Returns: boolean }
       is_active_member: { Args: never; Returns: boolean }
       my_rank_level: { Args: never; Returns: number }
-      register_cash_movement: {
-        Args: { p_amount: number; p_kind: string; p_reason: string }
-        Returns: number
-      }
+      my_cash_balance: { Args: never; Returns: number }
+      set_cash_balance: { Args: { p_balance: number }; Returns: number }
       register_stock_movement: {
         Args: {
           p_item: number

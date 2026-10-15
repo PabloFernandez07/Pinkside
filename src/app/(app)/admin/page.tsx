@@ -35,11 +35,15 @@ export default async function AdminPage({
   const rankById = new Map(ranks.map((rank) => [rank.id, rank]))
   const assignable = ranks.filter((rank) => rank.level <= actorLevel)
   const pending = membersRes.data.filter((member) => member.status === 'pending')
-  const members = membersRes.data.filter((member) => member.status !== 'pending')
+  const fullName = (member: (typeof pending)[number]) =>
+    [member.first_name, member.last_name].filter(Boolean).join(' ') || '—'
+  const levelOf = (member: (typeof pending)[number]) => rankById.get(member.rank_id ?? -1)?.level ?? 0
+  // Ordenados por rango (de mayor a menor) y, dentro de cada rango, por nombre.
+  const members = membersRes.data
+    .filter((member) => member.status !== 'pending')
+    .sort((a, b) => levelOf(b) - levelOf(a) || fullName(a).localeCompare(fullName(b), 'es'))
   const pendingPage = paginate(pending, parsePage(pendientes))
   const memberPage = paginate(members, parsePage(pagina))
-  const fullName = (member: (typeof members)[number]) =>
-    [member.first_name, member.last_name].filter(Boolean).join(' ') || '—'
 
   return (
     <div className="page">

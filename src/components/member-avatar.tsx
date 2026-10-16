@@ -39,6 +39,6 @@ export function MemberAvatar({ name, url, size = 'md' }: MemberAvatarProps) {
   }
   return (
     // eslint-disable-next-line @next/next/no-img-element -- foto pequeña del CDN de Discord; no pasa por el optimizador
-    <img src={src} alt="" width={px} height={px} referrerPolicy="no-referrer" className={`avatar-img m-${size}`} />
+    <img src={src} alt="" width={px} height={px} loading="lazy" decoding="async" referrerPolicy="no-referrer" className={`avatar-img m-${size}`} />
   )
 }

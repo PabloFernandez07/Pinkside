@@ -3,12 +3,12 @@ import { canSeeMap, getDisabledSections, requireMember } from '@/lib/access'
 import { TopNav, type NavItem } from '@/components/top-nav'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const access = await requireMember('active')
+  // Las secciones desactivadas no dependen del perfil: se piden a la vez para ahorrar un viaje a la base.
+  const [access, disabled] = await Promise.all([requireMember('active'), getDisabledSections()])
   const { profile, permissions, rankName } = access
 
   const items: NavItem[] = [{ href: '/resumen', label: 'Resumen', icon: 'resumen' }]
   if (permissions.has('cash.view')) items.push({ href: '/caja', label: 'Caja', icon: 'caja' })
-  const disabled = await getDisabledSections()
   if (permissions.has('inventory.view') && !disabled.has('inventario')) {
     items.push({ href: '/inventario', label: 'Inventario', icon: 'inventario' })
   }

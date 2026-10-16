@@ -19,6 +19,7 @@ interface Result {
 }
 
 const MAX_PER_GROUP = 6
+const PALETTE_TTL_MS = 60_000
 
 function buildResults(query: string, pages: PalettePage[], data: PaletteData | null): Result[] {
   const match = (name: string) => matchesSearch({ name, category: null }, query)
@@ -49,12 +50,17 @@ export function CommandPalette({ pages }: { pages: PalettePage[] }) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const [data, setData] = useState<PaletteData | null>(null)
+  const loadedAt = useRef(0)
 
   const open = () => {
     if (dialogRef.current?.open) return
     dialogRef.current?.showModal()
-    // Se refresca cada vez que se abre: así aparecen los items y miembros nuevos.
-    getPaletteData().then(setData, () => undefined)
+    // Se refresca al abrir, pero no más de una vez por minuto: así no se repiten las 3 consultas.
+    if (Date.now() - loadedAt.current < PALETTE_TTL_MS) return
+    loadedAt.current = Date.now()
+    getPaletteData().then(setData, () => {
+      loadedAt.current = 0
+    })
   }
   const close = () => dialogRef.current?.close()
 

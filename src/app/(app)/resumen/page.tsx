@@ -70,7 +70,7 @@ async function loadStockAndRecipes(supabase: Supabase, withRecipes: boolean) {
 /** Estadísticas propias, rango siguiente y sus requisitos. Si algo falla, «Tu camino» simplemente no sale. */
 async function loadPath(supabase: Supabase, memberId: string, rankLevel: number | null) {
   const [statsRes, ranksRes, reqRes] = await Promise.all([
-    supabase.rpc('band_stats'),
+    supabase.rpc('band_stats', { p_member: memberId }),
     supabase.from('ranks').select('id, name, level').order('level'),
     supabase.from('rank_requirements').select('rank_id, metric, target'),
   ])
@@ -90,13 +90,16 @@ async function loadPath(supabase: Supabase, memberId: string, rankLevel: number 
 }
 
 export default async function ResumenPage() {
-  const { profile, rankName, rankLevel, permissions } = await requireMember('active')
+  // Una sección desactivada en Administración tampoco aparece en las alertas ni en los indicadores.
+  // Ambas lecturas están memoizadas por petición (las comparte el layout) y no dependen entre sí.
+  const [{ profile, rankName, rankLevel, permissions }, disabled] = await Promise.all([
+    requireMember('active'),
+    getDisabledSections(),
+  ])
   const supabase = await createClient()
   const layout = parseLayout((await cookies()).get(DASHBOARD_COOKIE)?.value)
 
   const canCash = permissions.has('cash.view')
-  // Una sección desactivada en Administración tampoco aparece en las alertas ni en los indicadores.
-  const disabled = await getDisabledSections()
   const canStock = permissions.has('inventory.view') && !disabled.has('inventario')
   const canRecipes = permissions.has('recipes.view') && canStock && !disabled.has('recetas')
   const canMembers = permissions.has('members.manage')

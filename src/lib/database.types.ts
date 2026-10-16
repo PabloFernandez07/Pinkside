@@ -509,7 +509,7 @@ export type Database = {
         Returns: undefined
       }
       band_stats: {
-        Args: Record<PropertyKey, never>
+        Args: { p_member?: string }
         Returns: {
           avatar_url: string
           cash_moves: number

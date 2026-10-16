@@ -17,7 +17,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   if (!UUID.test(id)) notFound()
 
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('band_stats')
+  const { data, error } = await supabase.rpc('band_stats', { p_member: id })
   if (error) throw new Error('No se pudo cargar el perfil')
   const row = data.find((entry) => entry.member_id === id)
   if (!row) notFound()

@@ -26,8 +26,16 @@ const nextConfig: NextConfig = {
       : [],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Teselas del mapa: no cambian de nombre, así que el navegador no necesita revalidarlas cada visita.
+      // ponytail: si se regeneran las teselas, versionar la ruta (p. ej. /mapa/v2/...).
+      { source: "/mapa/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }] },
+    ];
   },
+  // El navegador reutiliza 30 s las páginas ya vistas (atrás/adelante y clics repetidos al instante).
+  // Las acciones con revalidatePath la invalidan.
+  experimental: { staleTimes: { dynamic: 30 } },
   // Cache Components desactivado: toda la app es privada y por usuario, no hay HTML estático que prerenderizar.
   turbopack: {
     rules: {

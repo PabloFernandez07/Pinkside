@@ -55,6 +55,14 @@ function pinIcon(emoji: string, selected: boolean): L.DivIcon {
   return L.divIcon({ html: pin, className: 'map-pin-wrap', iconSize: [38, 38], iconAnchor: [19, 19] })
 }
 
+/** Tirador de un vértice (grande) o del punto medio de un lado (pequeño, al pulsarlo crea un vértice). */
+const handleIcon = (kind: 'vertex' | 'mid'): L.DivIcon => {
+  const size = kind === 'vertex' ? 16 : 11
+  return L.divIcon({ className: `map-handle ${kind}`, iconSize: [size, size], iconAnchor: [size / 2, size / 2] })
+}
+
+const MIN_AREA_POINTS = 3
+
 const firstError = (result: Extract<MapActionResult, { ok: false }>): string =>
   result.message ?? Object.values(result.errors ?? {}).flat().find(Boolean) ?? 'No se pudo guardar.'
 
@@ -95,6 +103,7 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
   const editing = iconDraft !== null || areaDraft !== null
   const detailIcon = selectedIcon ?? markerIcon
   const pinsOfDetailIcon = detailIcon ? markers.filter((m) => m.iconId === detailIcon.id).length : 0
+  const editingAreaId = areaDraft?.id ?? null // zona cuya forma se está editando: se dibuja el borrador en su lugar
 
   // --- Mapa, teselas y capas ---
   useEffect(() => {
@@ -170,6 +179,7 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
     group.clearLayers()
     if (!showAreas) return
     for (const area of areas) {
+      if (area.id === editingAreaId) continue
       const isSelected = selection?.type === 'area' && selection.id === area.id
       L.polygon(latLngs(area.points), {
         color: area.color,
@@ -182,7 +192,7 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
         .on('click', () => api.current.select({ type: 'area', id: area.id }))
         .addTo(group)
     }
-  }, [areas, showAreas, selection, mode])
+  }, [areas, showAreas, selection, mode, editingAreaId])
 
   // Borrador: puntos que se están marcando o zona recién dibujada que aún no se ha guardado.
   useEffect(() => {
@@ -192,7 +202,34 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
     const points = mode === 'drawing' ? draftPoints : (areaDraft?.points ?? [])
     const color = areaDraft?.color ?? DEFAULT_AREA_COLOR
     if (points.length >= 3) {
-      L.polygon(latLngs(points), { color, weight: 3, dashArray: '6 6', fillColor: color, fillOpacity: 0.25, interactive: false }).addTo(group)
+      const polygon = L.polygon(latLngs(points), { color, weight: 3, dashArray: '6 6', fillColor: color, fillOpacity: 0.25, interactive: false }).addTo(group)
+      // Zona existente: vértices arrastrables, doble clic (o clic derecho) para quitar uno y puntos medios para añadir.
+      if (mode === 'idle' && areaDraft?.id != null) {
+        const live = points.map((p): Point => [p[0], p[1]])
+        const setPoints = (next: readonly Point[]) => setAreaDraft((draft) => (draft ? { ...draft, points: [...next] } : draft))
+        live.forEach(([x, y], index) => {
+          const remove = () => live.length > MIN_AREA_POINTS && setPoints(live.filter((_, i) => i !== index))
+          L.marker(toLatLng(x, y), { icon: handleIcon('vertex'), draggable: true, title: 'Arrastra para mover · doble clic para quitar' })
+            .on('drag', (event) => {
+              const at = (event.target as L.Marker).getLatLng()
+              const moved = fromLatLng(at.lat, at.lng)
+              live[index] = [moved.x, moved.y]
+              polygon.setLatLngs(latLngs(live))
+            })
+            .on('dragend', () => setPoints(live))
+            .on('dblclick', remove)
+            .on('contextmenu', remove)
+            .addTo(group)
+        })
+        if (live.length < MAX_AREA_POINTS) {
+          live.forEach(([x, y], index) => {
+            const [nx, ny] = live[(index + 1) % live.length]
+            L.marker(toLatLng((x + nx) / 2, (y + ny) / 2), { icon: handleIcon('mid'), title: 'Pulsa para añadir un punto' })
+              .on('click', () => setPoints([...live.slice(0, index + 1), [(x + nx) / 2, (y + ny) / 2], ...live.slice(index + 1)]))
+              .addTo(group)
+          })
+        }
+      }
     } else if (points.length === 2) {
       L.polyline(latLngs(points), { color, weight: 3, dashArray: '6 6', interactive: false }).addTo(group)
     }
@@ -357,7 +394,7 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
         name: draft.name,
         note: draft.note,
         color: draft.color,
-        points: draft.id === null ? JSON.stringify(draft.points) : null,
+        points: JSON.stringify(draft.points),
       })
       if (!result.ok) return setError(firstError(result))
       const previous = areas.find((a) => a.id === result.id)
@@ -366,7 +403,7 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
         name: draft.name.trim(),
         note: draft.note.trim() || null,
         color: draft.color,
-        points: previous?.points ?? draft.points,
+        points: draft.points,
         authorName: previous?.authorName ?? currentName,
       }
       setAreas((current) => (previous ? current.map((a) => (a.id === saved.id ? saved : a)) : [...current, saved]))

@@ -154,6 +154,11 @@ export function AreaForm({ draft, error, pending, onChange, onSave, onCancel, on
       onCancel={onCancel}
       onDelete={onDelete}
     >
+      {draft.id !== null && (
+        <p className="muted small">
+          Cambia la forma en el mapa: arrastra los puntos grandes, pulsa un punto pequeño para añadir otro y haz doble clic en un punto para quitarlo.
+        </p>
+      )}
       <div className="field">
         <label htmlFor="map-area-name">Nombre</label>
         <input

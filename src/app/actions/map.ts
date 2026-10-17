@@ -89,7 +89,7 @@ export async function deleteMarker(input: unknown): Promise<MapActionResult> {
   return { ok: true, id: parsed.data.id }
 }
 
-/** Crea una zona (con sus puntos) o edita nombre, nota y color de una existente (sin puntos = conserva la forma). */
+/** Crea una zona o edita nombre, nota, color y forma de una existente (sin puntos = conserva la forma). */
 export async function saveArea(input: unknown): Promise<MapActionResult> {
   await requirePermission('map.edit')
   const parsed = saveAreaSchema.safeParse(input)

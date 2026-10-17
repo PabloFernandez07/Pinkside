@@ -360,6 +360,9 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 .map-pin { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; background: var(--surface); border: 2px solid var(--line); box-shadow: 0 2px 8px oklch(0% 0 0 / 0.45); }
 .map-pin.selected { border-color: var(--accent); transform: scale(1.18); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 45%, transparent), 0 2px 8px oklch(0% 0 0 / 0.45); }
 .map-pin.draft { border: 2px dashed var(--accent); }
+.map-handle { border-radius: 50%; box-sizing: border-box; cursor: grab; }
+.map-handle.vertex { background: #fff; border: 3px solid var(--accent); box-shadow: 0 1px 4px oklch(0% 0 0 / 0.5); }
+.map-handle.mid { background: color-mix(in oklch, #fff 70%, transparent); border: 2px solid var(--accent); cursor: copy; }
 .map-side .scroll { display: grid; gap: 1rem; align-content: start; }
 .map-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .map-form, .map-detail { display: grid; gap: 0.7rem; padding: 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }

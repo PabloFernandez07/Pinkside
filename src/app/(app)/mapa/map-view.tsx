@@ -493,6 +493,7 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
 
       <aside className="card map-side" aria-label="Leyenda y herramientas del mapa">
         <div className="scroll scroll-top">
+          <div className="map-sticky">
           {canEdit && (
             <div className="map-tools">
               <button type="button" className="btn sm" onClick={startNewIcon} disabled={mode !== 'idle' || editing}>
@@ -590,6 +591,7 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
               {error}
             </p>
           )}
+          </div>
 
           <MapLegend
             icons={icons}

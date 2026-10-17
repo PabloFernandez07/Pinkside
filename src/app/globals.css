@@ -364,6 +364,7 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 .map-handle.vertex { background: #fff; border: 3px solid var(--accent); box-shadow: 0 1px 4px oklch(0% 0 0 / 0.5); }
 .map-handle.mid { background: color-mix(in oklch, #fff 70%, transparent); border: 2px solid var(--accent); cursor: copy; }
 .map-side .scroll { display: grid; gap: 1rem; align-content: start; }
+.map-sticky { position: sticky; top: calc(-1 * var(--pad)); z-index: 2; display: grid; gap: 1rem; margin-top: calc(-1 * var(--pad)); padding-top: var(--pad); padding-bottom: 0.5rem; max-height: 65vh; overflow-y: auto; background: var(--surface); }
 .map-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .map-form, .map-detail { display: grid; gap: 0.7rem; padding: 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface-2); }
 .map-detail { border-color: var(--accent); gap: 0.4rem; }

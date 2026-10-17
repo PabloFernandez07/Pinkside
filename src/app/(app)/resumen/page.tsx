@@ -19,6 +19,7 @@ import { stockState, toInventoryItem, type InventoryItem } from '@/lib/stock'
 import { createClient } from '@/lib/supabase/server'
 import { BarChart, LineChart } from '@/components/charts'
 import { ItemThumb } from '@/components/item-thumb'
+import { LiveRefresh } from '@/components/live-refresh'
 import { DashboardEditor } from './dashboard-editor'
 import { PathCard, type WelcomeStep } from './path-card'
 
@@ -398,8 +399,9 @@ export default async function ResumenPage() {
 
   return (
     <div className="page">
+      <LiveRefresh tables={['cash_movements']} />
       <div className="phead">
-        <h1>Hola, {profile.first_name ?? profile.discord_username}</h1>
+        <h1>Hola,{profile.first_name ?? profile.discord_username}</h1>
         <p>Rango: {rankName ?? 'sin rango'}</p>
         <DashboardEditor initial={serializeLayout(layout)} available={[...available]} />
       </div>

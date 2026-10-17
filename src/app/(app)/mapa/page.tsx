@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { canSeeMap, requireMember } from '@/lib/access'
+import { LiveRefresh } from '@/components/live-refresh'
 import { parsePoints } from '@/lib/map'
 import { createClient } from '@/lib/supabase/server'
 import { MapLoader } from './map-loader'
@@ -50,6 +51,7 @@ export default async function MapaPage() {
 
   return (
     <div className="page">
+      <LiveRefresh tables={['map_icons', 'map_markers', 'map_areas']} />
       <div className="phead">
         <h1>Mapa</h1>
         <p>Iconos y zonas de la banda sobre el mapa de Los Santos</p>

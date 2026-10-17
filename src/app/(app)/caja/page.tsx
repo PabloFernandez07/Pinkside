@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { requirePermission } from '@/lib/access'
 import { formatDateTime } from '@/lib/format'
+import { LiveRefresh } from '@/components/live-refresh'
 import { Pager } from '@/components/pager'
 import { SectionTabs } from '@/components/section-tabs'
 import { formatMoney, formatSignedMoney } from '@/lib/money'
@@ -47,6 +48,7 @@ export default async function CajaPage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="page">
+      <LiveRefresh tables={['cash_movements']} />
       <div className="phead">
         <h1>Caja común</h1>
         <p>Cada miembro actualiza el saldo de su cuenta; el libro nunca se edita ni se borra</p>

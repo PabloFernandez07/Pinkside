@@ -70,6 +70,14 @@ export default function MapView({ initialIcons, initialMarkers, initialAreas, ca
   const [icons, setIcons] = useState<IconData[]>(initialIcons)
   const [markers, setMarkers] = useState<MarkerData[]>(initialMarkers)
   const [areas, setAreas] = useState<AreaData[]>(initialAreas)
+  // Cuando el servidor manda datos nuevos (cambios de otras sesiones), el mapa los adopta.
+  const [served, setServed] = useState({ initialIcons, initialMarkers, initialAreas })
+  if (served.initialIcons !== initialIcons || served.initialMarkers !== initialMarkers || served.initialAreas !== initialAreas) {
+    setServed({ initialIcons, initialMarkers, initialAreas })
+    setIcons(initialIcons)
+    setMarkers(initialMarkers)
+    setAreas(initialAreas)
+  }
   const [style, setStyle] = useState<TileStyle>('satelite')
   const [mode, setMode] = useState<Mode>('idle')
   const [placingIconId, setPlacingIconId] = useState<number | null>(null)

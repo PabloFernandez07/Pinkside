@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react'
-import { canSeeMap, getDisabledSections, isAuditor, requireMember } from '@/lib/access'
+import { canSeeMap, getDisabledSections, requireMember } from '@/lib/access'
 import { TopNav, type NavItem } from '@/components/top-nav'
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   // Las secciones desactivadas no dependen del perfil: se piden a la vez para ahorrar un viaje a la base.
-  const [access, disabled, auditor] = await Promise.all([requireMember('active'), getDisabledSections(), isAuditor()])
+  const [access, disabled] = await Promise.all([requireMember('active'), getDisabledSections()])
   const { profile, permissions, rankName } = access
 
   const items: NavItem[] = [{ href: '/resumen', label: 'Resumen', icon: 'resumen' }]
@@ -25,7 +25,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (canMembers || permissions.has('roles.manage')) {
     items.push({ href: canMembers ? '/admin' : '/admin/rangos', label: 'Administración', icon: 'admin' })
   }
-  if (auditor) items.push({ href: '/auditoria', label: 'Auditoría', icon: 'auditoria' })
   const name =
     [profile.first_name, profile.last_name].filter(Boolean).join(' ') || profile.discord_username || 'Miembro'
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { AdminTabs } from '@/components/admin-tabs'
 import { requireAuditor } from '@/lib/access'
 import { formatDateTime } from '@/lib/format'
 import { Pager } from '@/components/pager'
@@ -21,7 +22,7 @@ export default async function AuditoriaPage({
 }: {
   searchParams: Promise<{ pagina?: string; ver?: string }>
 }) {
-  await requireAuditor()
+  const { permissions } = await requireAuditor()
 
   const { pagina, ver } = await searchParams
   const onlyDenied = ver === 'denegados'
@@ -44,14 +45,19 @@ export default async function AuditoriaPage({
   return (
     <div className="page">
       <div className="phead">
-        <h1>Auditoría de accesos</h1>
+        <h1>Administración</h1>
         <p>Cada vez que alguien vuelve de Discord, tenga cuenta o no. Solo la ves tú</p>
       </div>
+      <AdminTabs
+        current="auditoria"
+        canMembers={permissions.has('members.manage')}
+        canRoles={permissions.has('roles.manage')}
+      />
       <SectionTabs
         label="Filtro de la auditoría"
         tabs={[
-          { href: '/auditoria', label: 'Todos', current: !onlyDenied },
-          { href: '/auditoria?ver=denegados', label: 'Denegados', current: onlyDenied },
+          { href: '/admin/auditoria', label: 'Todos', current: !onlyDenied },
+          { href: '/admin/auditoria?ver=denegados', label: 'Denegados', current: onlyDenied },
         ]}
       />
 
@@ -103,7 +109,7 @@ export default async function AuditoriaPage({
           )}
           <Pager
             label="Paginación de la auditoría"
-            path="/auditoria"
+            path="/admin/auditoria"
             params={{ ver: onlyDenied ? 'denegados' : undefined }}
             page={page}
             lastPage={lastPage}

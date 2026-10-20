@@ -348,6 +348,18 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      weekly_reports: {
+        Row: {
+          sections: Json
+          updated_at: string
+          updated_by: string | null
+          updated_by_name: string
+          week_start: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       map_areas: {
         Row: {
           author_id: string | null
@@ -511,6 +523,10 @@ export type Database = {
       can_view_map: { Args: Record<PropertyKey, never>; Returns: boolean }
       set_member_map_access: { Args: { p_member: string; p_value: boolean }; Returns: undefined }
       get_disabled_sections: { Args: Record<PropertyKey, never>; Returns: string[] }
+      save_weekly_report: {
+        Args: { p_week: string; p_sections: Json }
+        Returns: undefined
+      }
       set_section_disabled: {
         Args: { p_disabled: boolean; p_section: string }
         Returns: undefined

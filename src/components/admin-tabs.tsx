@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { isAuditor } from '@/lib/access'
 
 interface AdminTabsProps {
-  current: 'miembros' | 'rangos' | 'secciones' | 'auditoria'
+  current: 'miembros' | 'rangos' | 'secciones' | 'informe' | 'auditoria'
   canMembers: boolean
   canRoles: boolean
 }
@@ -14,6 +14,7 @@ export async function AdminTabs({ current, canMembers, canRoles }: AdminTabsProp
     canMembers && { id: 'miembros', href: '/admin', label: 'Miembros' },
     canRoles && { id: 'rangos', href: '/admin/rangos', label: 'Rangos y permisos' },
     canRoles && { id: 'secciones', href: '/admin/secciones', label: 'Secciones' },
+    canRoles && { id: 'informe', href: '/admin/informe', label: 'Informe semanal' },
     canAudit && { id: 'auditoria', href: '/admin/auditoria', label: 'Auditoría' },
   ].filter((tab) => tab !== false)
   if (tabs.length < 2) return null

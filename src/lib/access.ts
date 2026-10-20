@@ -77,6 +77,20 @@ export async function requireMember(expected: MemberStatus): Promise<MemberAcces
   return access
 }
 
+/** Si el usuario actual puede ver la auditoría de accesos (lo decide la base de datos por ID de Discord). */
+export const isAuditor = cache(async (): Promise<boolean> => {
+  const supabase = await createClient()
+  const { data } = await supabase.rpc('is_auditor')
+  return data === true
+})
+
+/** Exige ser auditor; el resto, al resumen. */
+export async function requireAuditor(): Promise<MemberAccess> {
+  const access = await requireMember('active')
+  if (!(await isAuditor())) redirect('/resumen')
+  return access
+}
+
 /** Exige un miembro activo con un permiso concreto. */
 export async function requirePermission(permission: string): Promise<MemberAccess> {
   const access = await requireMember('active')

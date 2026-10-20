@@ -332,6 +332,22 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      access_log: {
+        Row: {
+          created_at: string
+          discord_id: string
+          discord_username: string | null
+          event: string
+          id: number
+          ip: string | null
+          member_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       map_areas: {
         Row: {
           author_id: string | null
@@ -602,6 +618,8 @@ export type Database = {
       delete_rank: { Args: { p_rank: number }; Returns: undefined }
       has_perm: { Args: { p_permission: string }; Returns: boolean }
       is_active_member: { Args: never; Returns: boolean }
+      is_auditor: { Args: never; Returns: boolean }
+      log_access: { Args: { p_ip: string; p_user_agent: string }; Returns: undefined }
       my_rank_level: { Args: never; Returns: number }
       my_cash_balance: { Args: never; Returns: number }
       set_cash_balance: { Args: { p_balance: number }; Returns: number }
@@ -658,7 +676,7 @@ export type Database = {
       }
     }
     Enums: {
-      member_status: 'onboarding' | 'pending' | 'active' | 'blocked'
+      member_status: 'onboarding' | 'pending' | 'active' | 'blocked' | 'denied'
     }
     CompositeTypes: {
       [_ in never]: never
@@ -669,7 +687,7 @@ export type Database = {
 export const Constants = {
   public: {
     Enums: {
-      member_status: ['onboarding', 'pending', 'active', 'blocked'],
+      member_status: ['onboarding', 'pending', 'active', 'blocked', 'denied'],
     },
   },
 } as const

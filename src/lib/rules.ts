@@ -6,6 +6,7 @@ const ROUTES: Record<MemberStatus, string> = {
   onboarding: '/onboarding',
   pending: '/pendiente',
   blocked: '/pendiente',
+  denied: '/pendiente',
   active: '/resumen',
 }
 

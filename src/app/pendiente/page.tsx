@@ -12,9 +12,10 @@ export default async function PendientePage() {
   if (access.state === 'anon') redirect('/login')
   if (access.state === 'orphan') redirect('/')
   const { status } = access.profile
-  if (status !== 'pending' && status !== 'blocked') redirect(routeForStatus(status))
+  if (status !== 'pending' && status !== 'blocked' && status !== 'denied') redirect(routeForStatus(status))
 
-  const blocked = status === 'blocked'
+  const denied = status === 'denied'
+  const blocked = status === 'blocked' || denied
   return (
     <main className="auth">
       <section className="auth-card">
@@ -22,11 +23,13 @@ export default async function PendientePage() {
           <i aria-hidden="true" />
           Pinkside
         </div>
-        <h1>{blocked ? 'Acceso bloqueado' : 'Ficha enviada'}</h1>
+        <h1>{denied ? 'Cuenta no autorizada' : blocked ? 'Acceso bloqueado' : 'Ficha enviada'}</h1>
         <p className="muted">
-          {blocked
+          {denied
+            ? 'Tu cuenta de Discord no está en la lista de acceso. Pide a un líder que añada tu ID de Discord.'
+            : blocked
             ? 'Un administrador ha bloqueado tu acceso. Si crees que es un error, habla con él por Discord.'
-            : 'Un administrador tiene que aprobar tu acceso. Vuelve a comprobarlo en un rato.'}
+            :'Un administrador tiene que aprobar tu acceso. Vuelve a comprobarlo en un rato.'}
         </p>
         <div className="actions">
           {!blocked && (

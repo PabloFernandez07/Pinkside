@@ -13,12 +13,21 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // Auditoría: cada vuelta de Discord queda registrada; si falla, no impide entrar.
+      const ip = request.headers.get('x-real-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? ''
+      await supabase.rpc('log_access', { p_ip: ip, p_user_agent: request.headers.get('user-agent') ?? '' })
+
       // Lleva a este dispositivo el tema y el acento guardados en el perfil.
       const { data: prefs } = await supabase
         .from('profiles')
-        .select('theme, accent')
+        .select('theme, accent, status')
         .eq('id', data.user.id)
         .maybeSingle()
+      // ID de Discord sin autorizar: se registró su intento y se le cierra la sesión.
+      if (prefs?.status === 'denied') {
+        await supabase.auth.signOut()
+        return NextResponse.redirect(`${origin}/login?error=denied`)
+      }
       writePreferenceCookies(
         await cookies(),
         isTheme(prefs?.theme) ? prefs.theme : DEFAULT_THEME,

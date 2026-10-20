@@ -60,7 +60,7 @@ describe('secciones', () => {
 
 describe('formatReport', () => {
   it('omite las secciones vacías y mantiene el formato de Discord', () => {
-    const sections = { ...emptySections(), robos: ['Robos a casas — con éxito.'], observaciones: ['Todo bien.'] }
+    const sections = { ...emptySections(), robos: ['Robos a casas — con éxito.', '- Ya con guion'], observaciones: ['Todo bien.'] }
     expect(formatReport('2026-10-12', sections)).toBe(
       [
         '📋 Informe semanal de actos ilícitos',
@@ -68,10 +68,11 @@ describe('formatReport', () => {
         'Semana: 12/10 – 18/10',
         '',
         '🏠 Robos',
-        'Robos a casas — con éxito.',
+        '- Robos a casas — con éxito.',
+        '- Ya con guion',
         '',
         '📝 Observaciones',
-        'Todo bien.',
+        '- Todo bien.',
       ].join('\n'),
     )
   })

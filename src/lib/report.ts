@@ -73,11 +73,14 @@ export const linesOf = (text: string): string[] =>
     .map((line) => line.trim())
     .filter(Boolean)
 
+/** Discord convierte «- » al inicio de línea en un punto de lista; si ya lo traía, no se duplica. */
+const bullet = (line: string): string => `- ${line.replace(/^-\s+/, '')}`
+
 /** El informe tal y como se pega en el canal. Las secciones vacías no salen. */
 export function formatReport(weekStart: string, sections: ReportSections, organization = 'Pinkside'): string {
   const head = ['📋 Informe semanal de actos ilícitos', `Organización: ${organization}`, `Semana: ${weekLabel(weekStart)}`]
   const blocks = REPORT_SECTIONS.flatMap(({ id, emoji, title }) =>
-    sections[id].length > 0 ? [[`${emoji} ${title}`, ...sections[id]].join('\n')] : [],
+    sections[id].length > 0 ? [[`${emoji} ${title}`, ...sections[id].map(bullet)].join('\n')] : [],
   )
   return [head.join('\n'), ...blocks].join('\n\n')
 }

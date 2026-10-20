@@ -348,6 +348,20 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      band_actions: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          member_id: string | null
+          member_name: string
+          note: string | null
+          qty: number
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       weekly_reports: {
         Row: {
           sections: Json
@@ -523,6 +537,15 @@ export type Database = {
       can_view_map: { Args: Record<PropertyKey, never>; Returns: boolean }
       set_member_map_access: { Args: { p_member: string; p_value: boolean }; Returns: undefined }
       get_disabled_sections: { Args: Record<PropertyKey, never>; Returns: string[] }
+      log_band_action: {
+        Args: { p_kind: string; p_note: string | null; p_qty: number }
+        Returns: undefined
+      }
+      delete_band_action: { Args: { p_id: number }; Returns: undefined }
+      band_action_counts: {
+        Args: { p_week: string }
+        Returns: { kind: string; members: number; total: number }[]
+      }
       save_weekly_report: {
         Args: { p_week: string; p_sections: Json }
         Returns: undefined

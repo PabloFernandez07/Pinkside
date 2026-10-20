@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { AdminTabs } from '@/components/admin-tabs'
 import { requirePermission } from '@/lib/access'
+import { suggestedLines } from '@/lib/band-actions'
 import { currentWeekStart, parseSections, parseWeek, shiftWeek, weekLabel } from '@/lib/report'
 import { createClient } from '@/lib/supabase/server'
 import { ReportForm } from './report-form'
@@ -25,6 +26,10 @@ export default async function InformePage({ searchParams }: { searchParams: Prom
     ? { data: null }
     : await supabase.from('weekly_reports').select(COLUMNS).lt('week_start', week).order('week_start', { ascending: false }).limit(1).maybeSingle()
   const source = saved ?? previous
+
+  // Lo apuntado en «Acciones» durante esa semana, ya redactado como líneas del informe.
+  const { data: counts } = await supabase.rpc('band_action_counts', { p_week: week })
+  const suggestions = suggestedLines(counts ?? [])
 
   return (
     <div className="page">
@@ -61,7 +66,7 @@ export default async function InformePage({ searchParams }: { searchParams: Prom
               </Link>
             )}
           </nav>
-          <ReportForm key={week} week={week} initial={parseSections(source?.sections)} />
+          <ReportForm key={week} week={week} initial={parseSections(source?.sections)} suggestions={suggestions} />
         </div>
       </section>
     </div>

@@ -10,13 +10,27 @@ import { emptySections, formatReport, linesOf, REPORT_SECTIONS, type ReportSecti
 interface ReportFormProps {
   week: string
   initial: ReportSections
+  /** Líneas generadas con las acciones apuntadas esa semana. */
+  suggestions: ReportSections
 }
 
 /** Un cuadro de texto por sección, un punto por línea. «Copiar» deja el informe listo para pegar en Discord. */
-export function ReportForm({ week, initial }: ReportFormProps) {
+export function ReportForm({ week, initial, suggestions }: ReportFormProps) {
   const { state, pending, onSubmit } = useManualForm(saveWeeklyReport)
   const formRef = useRef<HTMLFormElement>(null)
   const [copied, setCopied] = useState<'ok' | 'error' | null>(null)
+  const suggested = REPORT_SECTIONS.reduce((sum, { id }) => sum + suggestions[id].length, 0)
+
+  // Añade al final de cada sección las líneas apuntadas que todavía no estén escritas.
+  const addSuggestions = () => {
+    for (const { id } of REPORT_SECTIONS) {
+      const field = formRef.current?.elements.namedItem(id)
+      if (!(field instanceof HTMLTextAreaElement)) continue
+      const current = linesOf(field.value)
+      field.value = [...current, ...suggestions[id].filter((line) => !current.includes(line))].join('\n')
+      field.rows = Math.max(3, linesOf(field.value).length + 1)
+    }
+  }
 
   const copy = async () => {
     const data = new FormData(formRef.current ?? undefined)
@@ -33,6 +47,16 @@ export function ReportForm({ week, initial }: ReportFormProps) {
   return (
     <form ref={formRef} onSubmit={onSubmit} className="form" noValidate>
       <input type="hidden" name="week" value={week} />
+      <div className="wide actions">
+        <button type="button" className="btn ghost" onClick={addSuggestions} disabled={suggested === 0}>
+          Añadir acciones apuntadas
+        </button>
+        <small className="muted">
+          {suggested === 0
+            ? 'Nadie ha apuntado acciones esta semana.'
+            : `${suggested} línea${suggested === 1 ? '' : 's'} generada${suggested === 1 ? '' : 's'} desde «Acciones». Revísalas y guarda.`}
+        </small>
+      </div>
       {REPORT_SECTIONS.map(({ id, emoji, title }) => (
         <div key={id} className="field wide">
           <label htmlFor={`rep-${id}`}>

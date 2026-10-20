@@ -29,6 +29,7 @@ const ICONS = {
     </>
   ),
   urgentes: <path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 20a2 2 0 0 0 4 0" />,
+  acciones: <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />,
   muro: <path d="M4 5h16v11H9l-5 4V5zM8 9h8M8 12h5" />,
   ranking: <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3" />,
   perfil: (

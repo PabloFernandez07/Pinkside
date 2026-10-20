@@ -16,6 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     items.push({ href: '/recetas', label: 'Recetas', icon: 'recetas' })
   }
   items.push({ href: '/urgentes', label: 'Urgentes', icon: 'urgentes' })
+  items.push({ href: '/acciones', label: 'Acciones', icon: 'acciones' })
   items.push({ href: '/muro', label: 'Muro', icon: 'muro' })
   if (canSeeMap(access)) items.push({ href: '/mapa', label: 'Mapa', icon: 'mapa' })
   items.push({ href: '/miembros', label: 'Miembros', icon: 'miembros' })
